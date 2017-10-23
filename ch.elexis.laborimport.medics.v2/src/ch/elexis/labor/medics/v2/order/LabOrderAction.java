@@ -61,7 +61,7 @@ public class LabOrderAction extends Action {
 	@Override
 	public void run(){
 		Patient patient = ElexisEventDispatcher.getSelectedPatient();
-		Kontakt kostentraeger = null;
+		Kontakt costBearer = null;
 		Kontakt rechnungsempfaenger = null;
 		Date beginDate = null;
 		String vnr = ""; //$NON-NLS-1$
@@ -95,11 +95,11 @@ public class LabOrderAction extends Action {
 					Messages.LabOrderAction_errorTitleNoFallSelected,
 					Messages.LabOrderAction_errorMessageNoFallSelected);
 			} else {
-				kostentraeger = fall.getRequiredContact("Kostenträger"); //$NON-NLS-1$
-				if (kostentraeger == null) {
-					kostentraeger = fall.getGarant();
+				costBearer = fall.getCostBearer();
+				if (costBearer == null) {
+					costBearer = fall.getGarant();
 				}
-				rechnungsempfaenger = fall.getRequiredContact("Rechnungsempfänger"); //$NON-NLS-1$
+				rechnungsempfaenger = fall.getRequiredContact(Fall.FLD_EXT_RECHNUNGSEMPFAENGER);
 				if (rechnungsempfaenger == null) {
 					rechnungsempfaenger = fall.getGarant();
 				}
@@ -114,11 +114,10 @@ public class LabOrderAction extends Action {
 		boolean ok = false;
 		long orderNr = -1;
 		String filenamePath = "-"; //$NON-NLS-1$
-		if (patient != null && kostentraeger != null) {
+		if (patient != null && costBearer != null) {
 			orderNr = getNextOrderNr(patient);
-			filenamePath =
-				writeHL7File(patient, rechnungsempfaenger, kostentraeger, plan, beginDate, vnr,
-					orderNr);
+			filenamePath = writeHL7File(patient, rechnungsempfaenger, costBearer, plan, beginDate,
+				vnr, orderNr);
 			if (filenamePath != null) {
 				ok = true; // @deprecated openBrowser();
 			}
@@ -135,9 +134,9 @@ public class LabOrderAction extends Action {
 				orderNrText = new Long(orderNr).toString();
 			}
 			MessageDialog.openInformation(Hub.getActiveShell(),
-				Messages.LabOrderAction_infoTitleLabOrderFinshed, MessageFormat.format(
-					Messages.LabOrderAction_infoMessageLabOrderFinshed, orderNrText, patLabel,
-					filenamePath));
+				Messages.LabOrderAction_infoTitleLabOrderFinshed,
+				MessageFormat.format(Messages.LabOrderAction_infoMessageLabOrderFinshed,
+					orderNrText, patLabel, filenamePath));
 		}
 	}
 	
@@ -273,8 +272,8 @@ public class LabOrderAction extends Action {
 		mandant.setEan(CoreHub.actMandant.getXid(DOMAIN_EAN));
 		
 		HL7_OML_O21 omlO21 =
-			new HL7_OML_O21("CHELEXIS", "PATDATA", Messages.LabOrderAction_receivingApplication,
-				"", Messages.LabOrderAction_receivingFacility, uniqueMessageControlID,
+			new HL7_OML_O21("CHELEXIS", "PATDATA", Messages.LabOrderAction_receivingApplication, "",
+				Messages.LabOrderAction_receivingFacility, uniqueMessageControlID,
 				uniqueProcessingID, mandant);
 		
 		// Patient
@@ -282,8 +281,8 @@ public class LabOrderAction extends Action {
 		fillHL7Kontakt(hl7Patient, patient);
 		String geschlecht = patient.getGeschlecht();
 		if (geschlecht != null && geschlecht.length() > 0) {
-			hl7Patient.setIsMale(Patient.MALE.toUpperCase().equals(
-				patient.getGeschlecht().toUpperCase()));
+			hl7Patient.setIsMale(
+				Patient.MALE.toUpperCase().equals(patient.getGeschlecht().toUpperCase()));
 		}
 		hl7Patient.setBirthdate(new TimeTool(patient.getGeburtsdatum()).getTime());
 		hl7Patient.setPatCode(patient.getPatCode());
@@ -299,9 +298,8 @@ public class LabOrderAction extends Action {
 		hl7Kostentraeger.setEan(kostentraeger.getXid(DOMAIN_EAN));
 		
 		try {
-			String encodedMessage =
-				omlO21.createText(hl7Patient, hl7Rechnungsempfaenger, hl7Kostentraeger, plan,
-					beginDate, vnr, orderNr);
+			String encodedMessage = omlO21.createText(hl7Patient, hl7Rechnungsempfaenger,
+				hl7Kostentraeger, plan, beginDate, vnr, orderNr);
 			
 			// File speichern
 			String filename =
@@ -312,9 +310,9 @@ public class LabOrderAction extends Action {
 			
 			return hl7File.getPath();
 		} catch (Exception e) {
-			SWTHelper.showError(
-				MessageFormat.format(Messages.LabOrderAction_errorTitleCannotCreateHL7,
-					omlO21.getVersion()), e.getMessage());
+			SWTHelper.showError(MessageFormat
+				.format(Messages.LabOrderAction_errorTitleCannotCreateHL7, omlO21.getVersion()),
+				e.getMessage());
 		}
 		return null;
 	}
@@ -329,10 +327,9 @@ public class LabOrderAction extends Action {
 		// Next order number
 		long nextOrderNr = 0;
 		JdbcLink connection = PersistentObject.getConnection();
-		String maxStr =
-			connection.getStatement().queryString(
-				"SELECT MAX(" + KontaktOrderManagement.FLD_ORDER_NR + ") FROM " //$NON-NLS-1$ //$NON-NLS-2$
-					+ KontaktOrderManagement.TABLENAME);
+		String maxStr = connection.getStatement()
+			.queryString("SELECT MAX(" + KontaktOrderManagement.FLD_ORDER_NR + ") FROM " //$NON-NLS-1$ //$NON-NLS-2$
+				+ KontaktOrderManagement.TABLENAME);
 		if (maxStr != null && maxStr.length() > 0) {
 			long maxOrderNr = new Long(maxStr).intValue();
 			nextOrderNr = maxOrderNr + 1;

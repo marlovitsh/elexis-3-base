@@ -262,7 +262,7 @@ public class TestData {
 			Fall fall = pat.neuerFall(Fall.getDefaultCaseLabel(), Fall.getDefaultCaseReason(),
 				Fall.getDefaultCaseLaw());
 			if (addKostentraeger) {
-				fall.setInfoElement("Kostenträger", pat.getId());
+				fall.setCostBearer(pat);
 			}
 			faelle.add(fall);
 			return pat;
