@@ -63,7 +63,7 @@ public class iMedAbfrageAction extends Action {
 	@Override
 	public void run(){
 		Patient patient = ElexisEventDispatcher.getSelectedPatient();
-		Kontakt kostentraeger = null;
+		Kontakt costBearer = null;
 		Kontakt rechnungsempfaenger = null;
 		Date beginDate = null;
 		String vnr = ""; //$NON-NLS-1$
@@ -97,11 +97,11 @@ public class iMedAbfrageAction extends Action {
 					Messages.LabOrderAction_errorTitleNoFallSelected,
 					Messages.LabOrderAction_errorMessageNoFallSelected);
 			} else {
-				kostentraeger = fall.getRequiredContact("Kostenträger"); //$NON-NLS-1$
-				if (kostentraeger == null) {
-					kostentraeger = fall.getGarant();
+				costBearer = fall.getCostBearer();
+				if (costBearer == null) {
+					costBearer = fall.getGarant();
 				}
-				rechnungsempfaenger = fall.getRequiredContact("Rechnungsempfänger"); //$NON-NLS-1$
+				rechnungsempfaenger = fall.getRequiredContact(Fall.FLD_EXT_RECHNUNGSEMPFAENGER);
 				if (rechnungsempfaenger == null) {
 					rechnungsempfaenger = fall.getGarant();
 				}
@@ -113,8 +113,8 @@ public class iMedAbfrageAction extends Action {
 		}
 		
 		// Nachricht auslösen
-		if (patient != null && kostentraeger != null) {
-			writeHL7File(patient, rechnungsempfaenger, kostentraeger, plan, beginDate, vnr);
+		if (patient != null && costBearer != null) {
+			writeHL7File(patient, rechnungsempfaenger, costBearer, plan, beginDate, vnr);
 		}
 	}
 	

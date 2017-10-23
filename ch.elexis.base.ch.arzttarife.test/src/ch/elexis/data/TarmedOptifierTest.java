@@ -44,7 +44,6 @@ public class TarmedOptifierTest {
 		patGrissemann = new Patient("Grissemann", "Christoph", "17.05.1966", Patient.MALE);
 		Fall fallGriss = patGrissemann.neuerFall("Testfall Grissemann", Fall.getDefaultCaseReason(),
 			Fall.getDefaultCaseLaw());
-		fallGriss.setInfoElement("Kostenträger", patGrissemann.getId());
 		konsGriss = new Konsultation(fallGriss);
 		konsGriss.addDiagnose(TICode.getFromCode("T1"));
 		konsGriss.addLeistung(tlBaseFirst5Min);
@@ -53,7 +52,6 @@ public class TarmedOptifierTest {
 		patStermann = new Patient("Stermann", "Dirk", "07.12.1965", Patient.MALE);
 		Fall fallSter = patStermann.neuerFall("Testfall Stermann", Fall.getDefaultCaseReason(),
 			Fall.getDefaultCaseLaw());
-		fallSter.setInfoElement("Kostenträger", patStermann.getId());
 		konsSter = new Konsultation(fallSter);
 		konsSter.addDiagnose(TICode.getFromCode("T1"));
 		konsSter.addLeistung(tlBaseFirst5Min);
