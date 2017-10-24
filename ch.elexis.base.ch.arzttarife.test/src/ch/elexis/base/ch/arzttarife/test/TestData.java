@@ -19,6 +19,7 @@ import ch.elexis.TarmedRechnung.XMLExporter;
 import ch.elexis.core.constants.Preferences;
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.data.interfaces.IVerrechenbar;
+import ch.elexis.data.BillingSystem;
 import ch.elexis.data.Eigenleistung;
 import ch.elexis.data.Fall;
 import ch.elexis.data.Konsultation;
@@ -293,7 +294,7 @@ public class TestData {
 		}
 		
 		private void moveRequiredToOptional(String defaultCaseLaw){
-			String requirements = Fall.getRequirements(defaultCaseLaw);
+			String requirements = BillingSystem.getRequirements(defaultCaseLaw);
 			if (requirements != null) {
 				CoreHub.globalCfg.set(Preferences.LEISTUNGSCODES_CFG_KEY + "/" //$NON-NLS-1$
 					+ defaultCaseLaw + "/bedingungen", ""); //$NON-NLS-1$
