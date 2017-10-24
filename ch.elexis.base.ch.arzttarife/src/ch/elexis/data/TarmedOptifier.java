@@ -126,7 +126,7 @@ public class TarmedOptifier implements IOptifier {
 		newVerrechnetSide = null;
 		// Korrekter Fall Typ prüfen, und ggf. den code ändern
 		if (tc.getCode().matches("39.002[01]") || tc.getCode().matches("39.001[0156]")) {
-			String gesetz = kons.getFall().getRequiredString("Gesetz");
+			String gesetz = kons.getFall().getConfiguredBillingSystemLaw().name();
 			if (gesetz == null || gesetz.isEmpty()) {
 				gesetz = kons.getFall().getAbrechnungsSystem();
 			}

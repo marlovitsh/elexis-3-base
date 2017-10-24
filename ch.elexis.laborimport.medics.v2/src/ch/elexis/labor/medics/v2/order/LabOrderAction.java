@@ -14,6 +14,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.data.events.ElexisEventDispatcher;
+import ch.elexis.core.model.ch.BillingLaw;
 import ch.elexis.core.ui.Hub;
 import ch.elexis.core.ui.util.SWTHelper;
 import ch.elexis.data.Anwender;
@@ -155,12 +156,12 @@ public class LabOrderAction extends Action {
 	 */
 	private String getVersicherungOderFallNummer(final Fall fall){
 		String nummer = null;
-		String gesetz = fall.getAbrechnungsSystem();
+		BillingLaw gesetz = fall.getConfiguredBillingSystemLaw();
 		if (gesetz != null) {
 			// Suche über Gesetz
-			if (gesetz.trim().toLowerCase().equalsIgnoreCase("ivg")) { //$NON-NLS-1$
+			if (gesetz == BillingLaw.IVG) {
 				nummer = fall.getRequiredString(TarmedRequirements.CASE_NUMBER);
-			} else if (gesetz.trim().toLowerCase().equalsIgnoreCase("uvg")) { //$NON-NLS-1$
+			} else if (gesetz == BillingLaw.UVG) {
 				nummer = fall.getRequiredString(TarmedRequirements.ACCIDENT_NUMBER);
 			} else {
 				nummer = fall.getRequiredString(TarmedRequirements.INSURANCE_NUMBER);
