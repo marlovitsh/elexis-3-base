@@ -22,6 +22,9 @@ import ch.elexis.core.ui.util.viewers.CommonViewer;
 import ch.elexis.core.ui.util.viewers.ViewerConfigurer.ICommonViewerContentProvider;
 import ch.elexis.data.Query;
 import ch.elexis.data.TarmedLeistung;
+import ch.elexis.data.TarmedOptifier;
+import ch.rgw.tools.JdbcLink;
+import ch.rgw.tools.StringTool;
 
 public class TarmedCodeSelectorContentProvider
 		implements ICommonViewerContentProvider, ITreeContentProvider {
@@ -44,13 +47,13 @@ public class TarmedCodeSelectorContentProvider
 	public TarmedCodeSelectorContentProvider(CommonViewer commonViewer){
 		this.commonViewer = commonViewer;
 		
-		childrenQuery =
-			new Query<>(TarmedLeistung.class, null, null, TarmedLeistung.TABLENAME, new String[] {
+		childrenQuery = new Query<>(TarmedLeistung.class, null, null, TarmedLeistung.TABLENAME,
+			new String[] {
 				TarmedLeistung.FLD_GUELTIG_VON, TarmedLeistung.FLD_GUELTIG_BIS,
 				TarmedLeistung.FLD_LAW
 			});
-		leafsQuery =
-			new Query<>(TarmedLeistung.class, null, null, TarmedLeistung.TABLENAME, new String[] {
+		leafsQuery = new Query<>(TarmedLeistung.class, null, null, TarmedLeistung.TABLENAME,
+			new String[] {
 				TarmedLeistung.FLD_GUELTIG_VON, TarmedLeistung.FLD_GUELTIG_BIS,
 				TarmedLeistung.FLD_LAW
 			});
@@ -119,12 +122,10 @@ public class TarmedCodeSelectorContentProvider
 	}
 	
 	@Override
-	public void selected(){
-	}
+	public void selected(){}
 	
 	@Override
-	public void init(){
-	}
+	public void init(){}
 	
 	@Override
 	public void startListening(){
@@ -179,8 +180,44 @@ public class TarmedCodeSelectorContentProvider
 			if (!isFiltered) {
 				childrenQuery.clear();
 				childrenQuery.add(TarmedLeistung.FLD_PARENT, Query.EQUALS, parentLeistung.getId());
+				// +++++ START minutes
+				if (TarmedOptifier.doStripMinuteItemsFromTree) {
+					// 00.0010, 00.0020, 00.0025, 00.0030 -> "einfach Konsultation, 5 Min"
+					// +++++ ACHTUNG: SQL
+					for (int i = 0; i < TarmedOptifier.fiveMinuteChunkCodeMaps.length; i++) {
+						String[] part = TarmedOptifier.fiveMinuteChunkCodeMaps[i];
+						String joined = ",XXX" + StringTool.join(part, ",") + ",";
+						childrenQuery.addToken(JdbcLink.wrap(joined) + " NOT " + Query.LIKE + " ("
+							+ JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE + " || "
+							+ JdbcLink.wrap(",%") + ")");
+					}
+
+					//					childrenQuery
+					//						.addToken(JdbcLink.wrap(",00.0020,00.0025,00.0026,00.0030,,00.0040,")
+					//							+ " NOT " + Query.LIKE + " (" + JdbcLink.wrap("%,") + " || "
+					//							+ TarmedLeistung.FLD_CODE + " || " + JdbcLink.wrap(",%") + ")");
+					//					childrenQuery.addToken(JdbcLink.wrap(",00.0070,00.0075,00.0080,") + " NOT "
+					//						+ Query.LIKE + " (" + JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE
+					//						+ " || " + JdbcLink.wrap(",%") + ")");
+					//					childrenQuery.addToken(JdbcLink.wrap(",00.0120,00.0125,00.0130,") + " NOT "
+					//						+ Query.LIKE + " (" + JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE
+					//						+ " || " + JdbcLink.wrap(",%") + ")");
+					// ***
+					for (int i = 0; i < TarmedOptifier.ageGroupLists.length; i++) {
+						String[] part = TarmedOptifier.ageGroupLists[i];
+						String joined = ",XXX" + StringTool.join(part, ",") + ",";
+						childrenQuery.addToken(JdbcLink.wrap(joined) + " NOT " + Query.LIKE + " ("
+							+ JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE + " || "
+							+ JdbcLink.wrap(",%") + ")");
+					}
+				}
+				// ***
 				childrenQuery.orderBy(false, TarmedLeistung.FLD_CODE);
-				return childrenQuery.execute().toArray();
+				Object[] res = childrenQuery.execute().toArray();
+				return res;
+				// +++++ END minutes
+				//				childrenQuery.orderBy(false, TarmedLeistung.FLD_CODE);
+				//				return childrenQuery.execute().toArray();
 			} else {
 				if (subChaptersHaveChildren(parentLeistung)) {
 					return getFilteredChapterChildren(parentLeistung).toArray();

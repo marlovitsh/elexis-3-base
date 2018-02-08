@@ -9,8 +9,10 @@
  *    G. Weirich - initial implementation
  *    
  *******************************************************************************/
-
 package ch.elexis.data;
+
+//TO DO 00.0076
+//TO DO 00.0126
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -29,6 +31,8 @@ import ch.elexis.core.constants.Preferences;
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.data.interfaces.IOptifier;
 import ch.elexis.core.data.interfaces.IVerrechenbar;
+import ch.elexis.core.data.interfaces.IVerrechenbar.DefaultOptifier;
+import ch.elexis.core.ui.util.SWTHelper;
 import ch.elexis.data.TarmedKumulation.TarmedKumulationType;
 import ch.elexis.data.TarmedLimitation.LimitationUnit;
 import ch.elexis.data.importer.TarmedLeistungAge;
@@ -46,6 +50,13 @@ import ch.rgw.tools.TimeTool;
  * 
  */
 public class TarmedOptifier implements IOptifier {
+	// +++++ START minutes
+	public static boolean doMinuteOptify = true;
+	public static boolean doStripMinuteItemsFromTree = true;
+	
+	public static boolean optifierDisabled = false;
+	// +++++ END minutes
+	
 	private static final String TL = "TL"; //$NON-NLS-1$
 	private static final String AL = "AL"; //$NON-NLS-1$
 	public static final int OK = 0;
@@ -66,6 +77,145 @@ public class TarmedOptifier implements IOptifier {
 	boolean bOptify = true;
 	private Verrechnet newVerrechnet;
 	private String newVerrechnetSide;
+	
+	// +++++ START minutes
+	// *** the first  entry is first  5-minute-chunks for all patients - this will always be sent to this method
+	// *** the second entry is middle 5-minute-chunks for 6-75 years
+	// *** the third  entry is middle 5-minute-chunks for children/olders (max 4*)
+	// *** the fourth entry is middle 5-minute-chunks for 6-75 years with more time needed (max 4*)
+	// *** the fourth entry is last   5-minute-chunks for all patients
+	// *** test if added code is listed in minuteCodeMaps
+	public static String[][] fiveMinuteChunkCodeMaps = {
+		{
+			"00.0010", "00.0020", "00.0025", "00.0026", "00.0030"
+		}, {
+			"00.0060", "00.0070", "00.0075", "00.0076", "00.0080"
+		}, {
+			"00.0110", "00.0120", "00.0125", "00.0126", "00.0130"
+		}, {
+			//"Telefonische, komplementärmedizinische Konsultation durch den Facharzt, 5 Min."
+			"00.1880", "00.1890", "00.1895", "00.1896", "00.1900"
+		}, {
+			// "Akupunktur, Konsultation durch den Facharzt, erste 5 Min.";"00.1710"
+			"00.1710", "00.1720", "00.1730"
+		}, {
+			// "Neuraltherapie, Konsultation durch den Facharzt, erste 5 Min.";"00.1740"
+			"00.1740", "00.1750", "00.1760"
+		}, {
+			// "Homöopathie, Konsultation durch den Facharzt, erste 5 Min.";"00.1770"
+			"00.1770", "00.1780", "00.1790"
+		}, {
+			// "Traditionelle Chinesische Medizin ({TCM}), Konsultation durch den Facharzt, erste 5 Min.";"00.1810"
+			"00.1810", "00.1820", "00.1830"
+		}, {
+			// "Anthroposophische Medizin, Konsultation durch den Facharzt, erste 5 Min.";"00.1840"
+			"00.1840", "00.1850", "00.1860"
+		}, {
+			// "Phytotherapie durch Facharzt, Konsultation durch den Facharzt, erste 5 Min.";"00.1870"
+			"00.1870", "00.1871", "00.1872"
+		}, {
+			// "Telefonische, komplementärmedizinische Konsultation durch den Facharzt, erste 5 Min.";"00.1880"
+			"00.1880", "00.1890", "00.1895", "00.1896", "00.1900"
+		}
+	};
+	
+	public static String[][] yearReplacements = {
+		{
+			" (Grundkonsultation)", ""
+		}, {
+			" (Konsultationszuschlag)", ""
+		}, {
+			" (Grundbesuch)", ""
+		}, {
+			" (Besuchszuschlag)", ""
+		}, {
+			" erste 5 Min.", " 5 Min."
+		}, {
+			" letzte 5 Min.", " 5 Min."
+		}, {
+			" jede weiteren 5 Min.", " 5 Min."
+		}, {
+			" bei Personen über 6 Jahren und unter 75 Jahren", ""
+		}, {
+			" bei Kindern unter 6 Jahren und Personen über 75 Jahren", ""
+		}, {
+			" bei Personen über 6 Jahren und unter 75 Jahren mit einem erhöhten Behandlungsbedarf",
+			""
+		},
+	};
+	
+	public static String[][] ageGroupLists = {
+		// *** col 1: 6-75
+		// *** col 0: <6, >75
+		// *** col 2: 6-75, erhöhter Aufwand
+		{
+			"00.0415", "00.0416", "00.0417",
+			"Kleine Untersuchung durch den Facharzt für Grundversorgung"
+		}, {
+			"00.0435", "00.0436", "00.0437",
+			"Kleine rheumatologische Untersuchung durch den Facharzt für Rheumatologie, Physikalische Medizin und Rehabilitation"
+		}, {
+			"00.0510", "00.0515", "00.0516",
+			"Spezifische Beratung durch den Facharzt für Grundversorgung"
+		}, {
+			"00.0530", "00.0535", "00.0536", "Genetische u/o pränatale Beratung durch den Facharzt"
+		}, {
+			"00.0610", "00.0615", "00.0616",
+			"Instruktion von Selbstmessungen, Selbstbehandlungen durch den Facharzt"
+		}, {
+			"00.1370", "00.1375", "00.1376", "Nachbetreuung/Betreuung/Überwachung in der Arztpraxis"
+		}, {
+			"02.0060", "02.0065", "02.0066",
+			"Telefonische Konsultation durch den Facharzt für Psychiatrie"
+		}, {
+			"02.0150", "02.0155", "02.0156",
+			"Telefonische Konsultation durch behandelnden Psychologen/Psychotherapeuten"
+		}, {
+			"04.0015", "04.0016", "04.0017", "Untersuchung durch den Facharzt für Dermatologie"
+		}, {
+			"00.0050", "00.0055", "00.0056",
+			"Vorbesprechung diagnostischer/therapeutischer Eingriffe mit Patienten/Angehörigen durch den Facharzt"
+		}, {
+			"00.0141", "00.0131", "00.0161", "Aktenstudium in Abwesenheit des Patienten"
+		}, {
+			"00.0142", "00.0132", "00.0162",
+			"Erkundigungen bei Dritten in Abwesenheit des Patienten"
+		}, {
+			"00.0143", "00.0133", "00.0163",
+			"Auskünfte an Angehörige oder andere Bezugspersonen des Patienten in Abwesenheit des Patienten"
+		}, {
+			"00.0144", "00.0134", "00.0164",
+			"Besprechungen mit Therapeuten und Betreuern des Patienten in Abwesenheit des Patienten"
+		}, {
+			"00.0145", "00.0135", "00.0165",
+			"Überweisungen an Konsiliarärzte in Abwesenheit des Patienten"
+		}, {
+			"00.0146", "00.0136", "00.0166",
+			"Ausstellen von Rezepten oder Verordnungen ausserhalb von Konsultation, Besuch und telefonischer Konsultation in Abwesenheit des Patienten"
+		}, {
+			"00.0147", "00.0137", "00.0167",
+			"Diagnostische Leistung am Institut für Pathologie/Histologie/Zytologie in Abwesenheit des Patienten"
+		}, {
+			"00.0148", "00.0138", "00.0168", "Tumorboard in Abwesenheit des Patienten"
+		}, {
+			"02.0060", "02.0065", "02.0066",
+			"Telefonische Konsultation durch den Facharzt für Psychiatrie"
+		}, {
+			"02.0150", "02.0155", "02.0156",
+			"Telefonische Konsultation durch behandelnden Psychologen/Psychotherapeuten"
+		}
+	};
+	
+	static String[][] minuteCodeMapsList = {
+		{
+			"00.0020", "00.0025", "00.0030"
+		}, {
+			"00.0070", "00.0075", "00.0080"
+		}, {
+			"00.0120", "00.0125", "00.0130"
+		}
+	};
+	// +++++ END minutes
 	
 	/**
 	 * Hier kann eine Konsultation als Ganzes nochmal überprüft werden
@@ -92,23 +242,76 @@ public class TarmedOptifier implements IOptifier {
 	 * oder modifizieren.
 	 */
 	
-	public Result<IVerrechenbar> add(IVerrechenbar code, Konsultation kons) {
+	public Result<IVerrechenbar> add(IVerrechenbar code, Konsultation kons){
+		//		if (optifierDisabled)
+		//			return new Result<IVerrechenbar>(Result.SEVERITY.OK, PREISAENDERUNG, "Preis", null, //$NON-NLS-1$
+		//				false);
+		
 		if (!(code instanceof TarmedLeistung)) {
-			return new Result<IVerrechenbar>(Result.SEVERITY.ERROR, LEISTUNGSTYP, Messages.TarmedOptifier_BadType, null,
-					true);
+			return new Result<IVerrechenbar>(Result.SEVERITY.ERROR, LEISTUNGSTYP,
+				Messages.TarmedOptifier_BadType, null, true);
 		}
-
+		
 		bOptify = CoreHub.userCfg.get(Preferences.LEISTUNGSCODES_OPTIFY, true);
-
+		
 		TarmedLeistung tc = (TarmedLeistung) code;
 		List<Verrechnet> lst = kons.getLeistungen();
 		/*
 		 * TODO Hier checken, ob dieser code mit der Dignität und
 		 * Fachspezialisierung des aktuellen Mandanten usw. vereinbar ist
 		 */
-
+		
 		Hashtable<String, String> ext = tc.loadExtension();
-
+		
+		// +++++ START minutes
+		String tcid = code.getCode();
+		doMinuteOptify = true;
+		if (doMinuteOptify) {
+			String law = kons.getFall().getRequiredString("Gesetz");
+			TimeTool date = new TimeTool(kons.getDatum());
+			
+			// ****************************************
+			// *** age group "redirects"
+			String joinedAgeMap = "";
+			int ageGroupIx = -1;
+			for (ageGroupIx = 0; ageGroupIx < ageGroupLists.length; ageGroupIx++) {
+				String[] ageMap = ageGroupLists[ageGroupIx];
+				joinedAgeMap = "," + StringTool.join(ageMap, ",") + ",";
+				if (joinedAgeMap.contains("," + tcid + ",")) {
+					// ***  test if current kons is for < 6 years or > 75 years
+					boolean isChildOrOlder = false; // *** default (NOT KVG)
+					if (law.equalsIgnoreCase("KVG")) {
+						IVerrechenbar childrensVerrechenbar =
+							TarmedLeistung.getFromCode(ageMap[0], date, law);
+						TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
+						Hashtable<String, String> extChildren = tc2.loadExtension();
+						String ageLimits = extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
+						isChildOrOlder = true;
+						if (ageLimits != null && !ageLimits.isEmpty()) {
+							String errorMessage = checkAge(ageLimits, kons);
+							if (errorMessage != null)
+								isChildOrOlder = false;
+						}
+					}
+					String newCode = tcid;
+					if (isChildOrOlder) {
+						newCode = ageMap[0];
+						
+					} else {
+						newCode = ageMap[1];
+					}
+					// if the code has been changed, then recall proc with
+					// changed code and return
+					if (!tcid.equals(newCode)) {
+						IVerrechenbar toBeAdded = TarmedLeistung.getFromCode(newCode, date, law);
+						return kons.addLeistung(toBeAdded);
+					}
+					break;
+				}
+			}
+		}
+		// +++++ END minutes
+		
 		// Gültigkeit gemäss Datum und Alter prüfen
 		if (bOptify) {
 			TimeTool date = new TimeTool(kons.getDatum());
@@ -117,7 +320,7 @@ public class TarmedOptifier implements IOptifier {
 				TimeTool tVon = new TimeTool(dVon);
 				if (date.isBefore(tVon)) {
 					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, NOTYETVALID,
-							code.getCode() + Messages.TarmedOptifier_NotYetValid, null, false);
+						code.getCode() + Messages.TarmedOptifier_NotYetValid, null, false);
 				}
 			}
 			String dBis = ((TarmedLeistung) code).get("GueltigBis"); //$NON-NLS-1$
@@ -125,7 +328,7 @@ public class TarmedOptifier implements IOptifier {
 				TimeTool tBis = new TimeTool(dBis);
 				if (date.isAfter(tBis)) {
 					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, NOMOREVALID,
-							code.getCode() + Messages.TarmedOptifier_NoMoreValid, null, false);
+						code.getCode() + Messages.TarmedOptifier_NoMoreValid, null, false);
 				}
 			}
 			String ageLimits = ext.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
@@ -145,26 +348,26 @@ public class TarmedOptifier implements IOptifier {
 			if (gesetz == null || gesetz.isEmpty()) {
 				gesetz = kons.getFall().getAbrechnungsSystem();
 			}
-
+			
 			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0011")) {
 				return this.add(getKonsVerrechenbar("39.0010", kons), kons);
 			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0010")) {
 				return this.add(getKonsVerrechenbar("39.0011", kons), kons);
 			}
-
+			
 			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0016")) {
 				return this.add(getKonsVerrechenbar("39.0015", kons), kons);
 			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0015")) {
 				return this.add(getKonsVerrechenbar("39.0016", kons), kons);
 			}
-
+			
 			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0021")) {
 				return this.add(getKonsVerrechenbar("39.0020", kons), kons);
 			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0020")) {
 				return this.add(getKonsVerrechenbar("39.0021", kons), kons);
 			}
 		}
-
+		
 		if (tc.getCode().matches("35.0020")) {
 			List<Verrechnet> opCodes = getOPList(lst);
 			List<Verrechnet> opReduction = getVerrechnetMatchingCode(lst, "35.0020");
@@ -180,6 +383,152 @@ public class TarmedOptifier implements IOptifier {
 			}
 			return new Result<IVerrechenbar>(null);
 		}
+		
+		// +++++ START minutes
+		if (doMinuteOptify) {
+			String law = kons.getFall().getRequiredString("Gesetz");
+			TimeTool date = new TimeTool(kons.getDatum());
+			
+			// +++++ loop
+			boolean skip = false;
+			if (tcid.equalsIgnoreCase("00.0020"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0025"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0026"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0030"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0070"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0075"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0076"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0080"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0120"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0125"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0126"))
+				skip = true;
+			if (tcid.equalsIgnoreCase("00.0130"))
+				skip = true;
+			if (!skip) {
+				// special handling for:
+				// Konsultation: 00.0010, 00.0020, 00.25, 00.0030
+				// Besuch: 00.0060, 00.0070, 00.0080
+				// Tel Kons: 00.0110, 00.0120, 00.0130
+				// *** count existing 5 minute chunks
+				// *** get age group
+				// *** if age under 6/over 75: add add up to 30 minutes
+				// *** if age over 6/under 75: add add up to 20 minutes
+				// *** if age over 6/under 75: add add up to 30 minutes after telling the user that it is necessary to...
+				int codeMapIx = -1;
+				String joinedCodeMap = "";
+				for (codeMapIx = 0; codeMapIx < fiveMinuteChunkCodeMaps.length; codeMapIx++) {
+					String[] codeMap = fiveMinuteChunkCodeMaps[codeMapIx];
+					joinedCodeMap = "," + StringTool.join(codeMap, ",") + ",";
+					if (joinedCodeMap.contains("," + tcid + ",")) {
+						// *** found a match
+						// *** count existing # of 5-minute-chunks
+						int numberOfFiveMinuteChunks = 0;
+						for (Verrechnet v : lst) {
+							String theCode = v.getCode();
+							for (int iii = 0; iii < codeMap.length; iii++) {
+								if (theCode.equalsIgnoreCase(codeMap[iii])) {
+									numberOfFiveMinuteChunks =
+										numberOfFiveMinuteChunks + v.getZahl();
+									break;
+								}
+							}
+						}
+						
+						// ***  test if current kons is for < 6 years or > 75 years
+						boolean isChildOrOlder = false; // *** default (NOT KVG)
+						if (law.equalsIgnoreCase("KVG")) {
+							IVerrechenbar childrensVerrechenbar =
+								TarmedLeistung.getFromCode(codeMap[2], date, law);
+							TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
+							Hashtable<String, String> extChildren = tc2.loadExtension();
+							String ageLimits = extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
+							isChildOrOlder = true;
+							if (ageLimits != null && !ageLimits.isEmpty()) {
+								String errorMessage = checkAge(ageLimits, kons);
+								if (errorMessage != null)
+									isChildOrOlder = false;
+							}
+						}
+						
+						// *** 
+						String newCode = tcid;
+						switch (numberOfFiveMinuteChunks) {
+						case 0:
+							newCode = codeMap[0];
+							break;
+						case 1:
+							newCode = codeMap[4];
+							break;
+						case 2:
+						case 3:
+							if (isChildOrOlder)
+								newCode = codeMap[2];
+							else
+								newCode = codeMap[1];
+							break;
+						case 4:
+						case 5:
+							if (isChildOrOlder)
+								newCode = codeMap[2];
+							else {
+								if (law.equalsIgnoreCase("KVG")) {
+									boolean okClicked = SWTHelper.askYesNo("Verrechnung",
+										"Achtung: über 20 Minuten mit spezieller Notiz in der KG/Begründung für die KK");
+									if (okClicked) {
+										IVerrechenbar toBeAdded =
+											TarmedLeistung.getFromCode(codeMap[3], date, law);
+										// *** must remove existing 00.0xx0 and replace by 00.0xx6
+										if (numberOfFiveMinuteChunks == 4) {
+											for (Verrechnet v : lst) {
+												String theCode = v.getCode();
+												if (theCode.equalsIgnoreCase(codeMap[1]))
+													kons.removeLeistung(v);
+											}
+											kons.addLeistung(toBeAdded);
+											kons.addLeistung(toBeAdded);
+										}
+										// *** add new 00.0xx6 version
+										return kons.addLeistung(toBeAdded);
+									} else {
+										return new Result<IVerrechenbar>(null);
+									}
+								} else {
+									return new Result<IVerrechenbar>(Result.SEVERITY.WARNING,
+										EXKLUSION, "Maximal 20 Minuten abrechenbar.", //$NON-NLS-1$
+										null, false);
+								}
+							}
+							break;
+						case 6:
+							return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, EXKLUSION,
+								"mehr als 30 geht grunzipiell nicht.", //$NON-NLS-1$
+								null, false);
+						}
+						
+						// if the code has been changed, then recall proc with
+						// changed code and return
+						if (!tcid.equals(newCode)) {
+							IVerrechenbar toBeAdded =
+								TarmedLeistung.getFromCode(newCode, date, law);
+							return kons.addLeistung(toBeAdded);
+						}
+						break;
+					}
+				}
+			}
+		}
+		// +++++ END minutes
 		
 		// Ist der Hinzuzufügende Code vielleicht schon in der Liste? Dann
 		// nur Zahl erhöhen.
@@ -220,7 +569,7 @@ public class TarmedOptifier implements IOptifier {
 								// new one
 								resCompatible = isCompatible(newTarmed, tarmed, kons);
 							}
-
+							
 							if (!resCompatible.isOK()) {
 								newVerrechnet.delete();
 								return resCompatible;
@@ -229,7 +578,8 @@ public class TarmedOptifier implements IOptifier {
 					}
 				}
 				
-				if (newVerrechnet.getCode().equals("00.0750") || newVerrechnet.getCode().equals("00.0010")) {
+				if (newVerrechnet.getCode().equals("00.0750")
+					|| newVerrechnet.getCode().equals("00.0010")) {
 					String excludeCode = null;
 					if (newVerrechnet.getCode().equals("00.0010")) {
 						excludeCode = "00.0750";
@@ -240,8 +590,8 @@ public class TarmedOptifier implements IOptifier {
 						if (v.getCode().equals(excludeCode)) {
 							newVerrechnet.delete();
 							return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, EXKLUSION,
-									"00.0750 ist nicht im Rahmen einer ärztlichen Beratung 00.0010 verrechnenbar.", //$NON-NLS-1$
-									null, false);
+								"00.0750 ist nicht im Rahmen einer ärztlichen Beratung 00.0010 verrechnenbar.", //$NON-NLS-1$
+								null, false);
 						}
 					}
 				}
@@ -262,9 +612,9 @@ public class TarmedOptifier implements IOptifier {
 				} else {
 					newVerrechnet.delete();
 				}
-				return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, KOMBINATION,
-					"Für die Zuschlagsleistung " + code.getCode()
-						+ " konnte keine passende Hauptleistung gefunden werden.",
+				return new Result<IVerrechenbar>(
+					Result.SEVERITY.WARNING, KOMBINATION, "Für die Zuschlagsleistung "
+						+ code.getCode() + " konnte keine passende Hauptleistung gefunden werden.",
 					null, false);
 			}
 			if (!masters.isEmpty()) {
@@ -290,14 +640,16 @@ public class TarmedOptifier implements IOptifier {
 				}
 			}
 		}
-
+		
 		Result<IVerrechenbar> limitResult = checkLimitations(kons, tc, newVerrechnet);
 		if (!limitResult.isOK()) {
 			return limitResult;
 		}
-
-		String tcid = code.getCode();
-
+		
+		// +++++ START minutes
+		// String tcid = code.getCode();
+		// +++++ END minutes
+		
 		// check if it's an X-RAY service and add default tax if so
 		// default xray tax will only be added once (see above)
 		if (!tc.getCode().equals(DEFAULT_TAX_XRAY_ROOM) && !tc.getCode().matches("39.002[01]")
@@ -328,10 +680,11 @@ public class TarmedOptifier implements IOptifier {
 			newVerrechnet.setDetail(AL, Double.toString(sumAL));
 			newVerrechnet.setDetail(TL, Double.toString(sumTL));
 		}
-
+		
 		// Zuschlag Kinder
 		else if (tcid.equals("00.0010") || tcid.equals("00.0060")) {
-			if (CoreHub.mandantCfg != null && CoreHub.mandantCfg.get(RechnungsPrefs.PREF_ADDCHILDREN, false)) {
+			if (CoreHub.mandantCfg != null
+				&& CoreHub.mandantCfg.get(RechnungsPrefs.PREF_ADDCHILDREN, false)) {
 				Fall f = kons.getFall();
 				if (f != null) {
 					Patient p = f.getPatient();
@@ -346,7 +699,7 @@ public class TarmedOptifier implements IOptifier {
 				}
 			}
 		}
-
+		
 		// Zuschläge für Insellappen 50% auf AL und TL bei 1910,20,40,50
 		else if (tcid.equals("04.1930")) { //$NON-NLS-1$
 			double sumAL = 0.0;
@@ -357,7 +710,7 @@ public class TarmedOptifier implements IOptifier {
 					String tlc = tl.getCode();
 					int z = v.getZahl();
 					if (tlc.equals("04.1910") || tlc.equals("04.1920") || tlc.equals("04.1940") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-							|| tlc.equals("04.1950")) { //$NON-NLS-1$
+						|| tlc.equals("04.1950")) { //$NON-NLS-1$
 						sumAL += tl.getAL(kons.getMandant()) * z;
 						sumTL += tl.getTL() * z;
 						// double al = (tl.getAL() * 15) / 10.0;
@@ -394,7 +747,7 @@ public class TarmedOptifier implements IOptifier {
 			newVerrechnet.setDetail(TL, Double.toString(sumTL));
 			newVerrechnet.setPrimaryScaleFactor(0.7);
 		}
-
+		
 		// Notfall-Zuschläge
 		if (tcid.startsWith("00.25")) { //$NON-NLS-1$
 			double sum = 0.0;
@@ -443,14 +796,15 @@ public class TarmedOptifier implements IOptifier {
 				newVerrechnet.setDetail(AL, Double.toString(sum));
 				newVerrechnet.setPrimaryScaleFactor(0.5);
 				break;
-
+			
 			case 60: // Tel. Mo-Fr 19-22, Sa 12-22, So 7-22: 30 TP
 				break;
 			case 80: // Tel. von 22-7: 70 TP
 				break;
-
+			
 			}
-			return new Result<IVerrechenbar>(Result.SEVERITY.OK, PREISAENDERUNG, "Preis", null, false); //$NON-NLS-1$
+			return new Result<IVerrechenbar>(Result.SEVERITY.OK, PREISAENDERUNG, "Preis", null, //$NON-NLS-1$
+				false);
 		}
 		return new Result<IVerrechenbar>(null);
 	}
@@ -495,7 +849,7 @@ public class TarmedOptifier implements IOptifier {
 		LocalDateTime consDate = new TimeTool(kons.getDatum()).toLocalDateTime();
 		Patient patient = kons.getFall().getPatient();
 		String geburtsdatum = patient.getGeburtsdatum();
-		if(StringUtils.isEmpty(geburtsdatum)) {
+		if (StringUtils.isEmpty(geburtsdatum)) {
 			return "Patienten Alter nicht ok, kein Geburtsdatum angegeben";
 		}
 		long patientAgeDays = patient.getAgeAt(consDate, ChronoUnit.DAYS);
@@ -588,9 +942,9 @@ public class TarmedOptifier implements IOptifier {
 			for (Verrechnet master : masterSlavesMap.keySet()) {
 				int masterCount = master.getZahl();
 				int slaveCount = 0;
-				for(Verrechnet slave : masterSlavesMap.get(master)) {
+				for (Verrechnet slave : masterSlavesMap.get(master)) {
 					slaveCount += slave.getZahl();
-					if(slave.equals(newSlave)) {
+					if (slave.equals(newSlave)) {
 						slaveCount--;
 					}
 				}
@@ -689,7 +1043,7 @@ public class TarmedOptifier implements IOptifier {
 					String opCodeString = opVerrechenbar.getCode();
 					if (bezug.equals(opCodeString)) {
 						// update
-						reductionVerrechnet.setZahl(opVerrechnet.getZahl());	
+						reductionVerrechnet.setZahl(opVerrechnet.getZahl());
 						reductionVerrechnet.setDetail(TL, Double.toString(opVerrechenbar.getTL()));
 						reductionVerrechnet.setDetail(AL, Double.toString(0.0));
 						reductionVerrechnet.setPrimaryScaleFactor(-0.4);
@@ -906,7 +1260,7 @@ public class TarmedOptifier implements IOptifier {
 		}
 		return new Result<Verrechnet>(code);
 	}
-
+	
 	@Override
 	public Verrechnet getCreatedVerrechnet(){
 		return newVerrechnet;
