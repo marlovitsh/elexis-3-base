@@ -242,31 +242,24 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 		String spacer = " ";
 		if (TarmedOptifier.doStripMinuteItemsFromTree) {
 			spacer = "  ";
-//			if (TarmedOptifier.doStripMinuteItemsFromTree) {
-//				if (vals[0].equalsIgnoreCase("00.0010")) {
-//					vals[0] = "00.00xx";
-//					vals[1] = "Konsultation, 5 Min. automatisch";
-//				}
-//				if (vals[0].equalsIgnoreCase("00.0060"))
-//					vals[1] = "Besuch, 5 Min. automatisch";
-//				if (vals[0].equalsIgnoreCase("00.0110"))
-//					vals[1] = "Telefonische Konsultation durch den Facharzt, 5 Min., automatisch";
-//			}
-			for (int i = 0; i < TarmedOptifier.ageGroupLists.length; i++) {
-				String code = vals[0];
-				String[] part = TarmedOptifier.ageGroupLists[i];
-				String joined = "," + StringTool.join(part, ",") + ",";
-				if (joined.contains("," + code + ",")) {
-					vals[0] = vals[0];
-					// vals[1] = part[3];
-					spacer = "* ";
-					break;
+			for (int j = 0; j < TarmedOptifier.codeMapListArrays.length; j++) {
+				String[][] codeMap = TarmedOptifier.codeMapListArrays[j];
+				for (int i = 0; i < codeMap.length; i++) {
+					String code = vals[0];
+					String[] part = codeMap[i];
+					String joined = "," + StringTool.join(part, ",") + ",";
+					if (joined.contains("," + code + ",")) {
+						vals[0] = vals[0];
+						// vals[1] = part[3];
+						spacer = "* ";
+						break;
+					}
 				}
 			}
 			// *** replace +++++
 			for (int ii = 0; ii < TarmedOptifier.yearReplacements.length; ii++)
-				vals[1] = vals[1].replaceAll(TarmedOptifier.yearReplacements[ii][0],
-					TarmedOptifier.yearReplacements[ii][1]);
+				vals[1] = vals[1].replace((CharSequence) TarmedOptifier.yearReplacements[ii][0],
+					(CharSequence) TarmedOptifier.yearReplacements[ii][1]);
 		}
 		return vals[0] + spacer + vals[1]
 			+ ((vals[2] != null && !vals[2].isEmpty()) ? " (" + vals[2] + ")" : "");

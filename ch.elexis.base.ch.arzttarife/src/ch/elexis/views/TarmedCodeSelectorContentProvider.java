@@ -2,6 +2,7 @@ package ch.elexis.views;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
@@ -18,13 +19,17 @@ import org.eclipse.jface.viewers.StructuredViewer;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.widgets.Display;
 
+import ch.elexis.core.data.events.ElexisEventDispatcher;
 import ch.elexis.core.ui.util.viewers.CommonViewer;
 import ch.elexis.core.ui.util.viewers.ViewerConfigurer.ICommonViewerContentProvider;
+import ch.elexis.data.Konsultation;
+import ch.elexis.data.Mandant;
 import ch.elexis.data.Query;
 import ch.elexis.data.TarmedLeistung;
 import ch.elexis.data.TarmedOptifier;
 import ch.rgw.tools.JdbcLink;
 import ch.rgw.tools.StringTool;
+import ch.rgw.tools.TimeTool;
 
 public class TarmedCodeSelectorContentProvider
 		implements ICommonViewerContentProvider, ITreeContentProvider {
@@ -181,34 +186,20 @@ public class TarmedCodeSelectorContentProvider
 				childrenQuery.clear();
 				childrenQuery.add(TarmedLeistung.FLD_PARENT, Query.EQUALS, parentLeistung.getId());
 				// +++++ START minutes
-				if (TarmedOptifier.doStripMinuteItemsFromTree) {
+				Konsultation kons = (Konsultation) ElexisEventDispatcher.getSelected(Konsultation.class);
+				boolean isAfter2018 = new TimeTool(kons.getDatum()).get(Calendar.YEAR) >= 2018;
+				if (TarmedOptifier.doStripMinuteItemsFromTree && isAfter2018) {
 					// 00.0010, 00.0020, 00.0025, 00.0030 -> "einfach Konsultation, 5 Min"
 					// +++++ ACHTUNG: SQL
-					for (int i = 0; i < TarmedOptifier.fiveMinuteChunkCodeMaps.length; i++) {
-						String[] part = TarmedOptifier.fiveMinuteChunkCodeMaps[i];
-						String joined = ",XXX" + StringTool.join(part, ",") + ",";
-						childrenQuery.addToken(JdbcLink.wrap(joined) + " NOT " + Query.LIKE + " ("
-							+ JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE + " || "
-							+ JdbcLink.wrap(",%") + ")");
-					}
-
-					//					childrenQuery
-					//						.addToken(JdbcLink.wrap(",00.0020,00.0025,00.0026,00.0030,,00.0040,")
-					//							+ " NOT " + Query.LIKE + " (" + JdbcLink.wrap("%,") + " || "
-					//							+ TarmedLeistung.FLD_CODE + " || " + JdbcLink.wrap(",%") + ")");
-					//					childrenQuery.addToken(JdbcLink.wrap(",00.0070,00.0075,00.0080,") + " NOT "
-					//						+ Query.LIKE + " (" + JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE
-					//						+ " || " + JdbcLink.wrap(",%") + ")");
-					//					childrenQuery.addToken(JdbcLink.wrap(",00.0120,00.0125,00.0130,") + " NOT "
-					//						+ Query.LIKE + " (" + JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE
-					//						+ " || " + JdbcLink.wrap(",%") + ")");
-					// ***
-					for (int i = 0; i < TarmedOptifier.ageGroupLists.length; i++) {
-						String[] part = TarmedOptifier.ageGroupLists[i];
-						String joined = ",XXX" + StringTool.join(part, ",") + ",";
-						childrenQuery.addToken(JdbcLink.wrap(joined) + " NOT " + Query.LIKE + " ("
-							+ JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE + " || "
-							+ JdbcLink.wrap(",%") + ")");
+					for (int j = 0; j < TarmedOptifier.codeMapListArrays.length; j++) {
+						String[][] codeMap = TarmedOptifier.codeMapListArrays[j];
+						for (int i = 0; i < codeMap.length; i++) {
+							String[] part = codeMap[i];
+							String joined = ",XXX" + StringTool.join(part, ",") + ",";
+							childrenQuery.addToken(JdbcLink.wrap(joined) + " NOT " + Query.LIKE
+								+ " (" + JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE
+								+ " || " + JdbcLink.wrap(",%") + ")");
+						}
 					}
 				}
 				// ***

@@ -11,24 +11,30 @@
  *******************************************************************************/
 package ch.elexis.data;
 
-//TO DO 00.0076
-//TO DO 00.0126
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+
+//TODO 00.0076
+//TODO 00.0126
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import org.apache.commons.lang.StringUtils;
 
 import ch.elexis.arzttarife_schweiz.Messages;
 import ch.elexis.core.constants.Preferences;
 import ch.elexis.core.data.activator.CoreHub;
+import ch.elexis.core.data.events.ElexisEventDispatcher;
 import ch.elexis.core.data.interfaces.IOptifier;
 import ch.elexis.core.data.interfaces.IVerrechenbar;
 import ch.elexis.core.data.interfaces.IVerrechenbar.DefaultOptifier;
@@ -38,6 +44,7 @@ import ch.elexis.data.TarmedLimitation.LimitationUnit;
 import ch.elexis.data.importer.TarmedLeistungAge;
 import ch.elexis.data.importer.TarmedReferenceDataImporter;
 import ch.elexis.tarmedprefs.RechnungsPrefs;
+import ch.rgw.tools.JdbcLink;
 import ch.rgw.tools.Result;
 import ch.rgw.tools.StringTool;
 import ch.rgw.tools.TimeTool;
@@ -51,10 +58,12 @@ import ch.rgw.tools.TimeTool;
  */
 public class TarmedOptifier implements IOptifier {
 	// +++++ START minutes
-	public static boolean doMinuteOptify = true;
-	public static boolean doStripMinuteItemsFromTree = true;
+	public static boolean doMinuteOptify = false;
+	public static boolean doStripMinuteItemsFromTree = false;
 	
 	public static boolean optifierDisabled = false;
+	
+	protected Konsultation lastKonsUsed = null;
 	// +++++ END minutes
 	
 	private static final String TL = "TL"; //$NON-NLS-1$
@@ -78,47 +87,188 @@ public class TarmedOptifier implements IOptifier {
 	private Verrechnet newVerrechnet;
 	private String newVerrechnetSide;
 	
-	// +++++ START minutes
-	// *** the first  entry is first  5-minute-chunks for all patients - this will always be sent to this method
-	// *** the second entry is middle 5-minute-chunks for 6-75 years
-	// *** the third  entry is middle 5-minute-chunks for children/olders (max 4*)
-	// *** the fourth entry is middle 5-minute-chunks for 6-75 years with more time needed (max 4*)
-	// *** the fourth entry is last   5-minute-chunks for all patients
-	// *** test if added code is listed in minuteCodeMaps
-	public static String[][] fiveMinuteChunkCodeMaps = {
-		{
-			"00.0010", "00.0020", "00.0025", "00.0026", "00.0030"
-		}, {
-			"00.0060", "00.0070", "00.0075", "00.0076", "00.0080"
-		}, {
-			"00.0110", "00.0120", "00.0125", "00.0126", "00.0130"
-		}, {
-			//"Telefonische, komplementärmedizinische Konsultation durch den Facharzt, 5 Min."
-			"00.1880", "00.1890", "00.1895", "00.1896", "00.1900"
-		}, {
-			// "Akupunktur, Konsultation durch den Facharzt, erste 5 Min.";"00.1710"
-			"00.1710", "00.1720", "00.1730"
-		}, {
-			// "Neuraltherapie, Konsultation durch den Facharzt, erste 5 Min.";"00.1740"
-			"00.1740", "00.1750", "00.1760"
-		}, {
-			// "Homöopathie, Konsultation durch den Facharzt, erste 5 Min.";"00.1770"
-			"00.1770", "00.1780", "00.1790"
-		}, {
-			// "Traditionelle Chinesische Medizin ({TCM}), Konsultation durch den Facharzt, erste 5 Min.";"00.1810"
-			"00.1810", "00.1820", "00.1830"
-		}, {
-			// "Anthroposophische Medizin, Konsultation durch den Facharzt, erste 5 Min.";"00.1840"
-			"00.1840", "00.1850", "00.1860"
-		}, {
-			// "Phytotherapie durch Facharzt, Konsultation durch den Facharzt, erste 5 Min.";"00.1870"
-			"00.1870", "00.1871", "00.1872"
-		}, {
-			// "Telefonische, komplementärmedizinische Konsultation durch den Facharzt, erste 5 Min.";"00.1880"
-			"00.1880", "00.1890", "00.1895", "00.1896", "00.1900"
-		}
-	};
+	// +++++ START children's additions
 	
+	/* Entweder oder:
+	00.0730 "Punktion in Reservoirsystem (intravenös, intraarteriell, Liquor) durch den Facharzt";
+	00.0740 "Punktion u/o Injektion in Reservoirsystem (Liquor) durch den Facharzt beim Kind/Jugendlichen bis 16 Jahre";
+	
+	00.0760 "Injektion, intrakutan/intramukös, durch den Facharzt (Bestandteil von 'Allgemeine Grundleistungen')";
+	00.0770 FALSCH ALS SUBITEM!!! "+ Injektion, intrakutan/intramukös, durch den Facharzt, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')";
+	
+	00.0800 "Injektion, intravenös (Bestandteil von 'Allgemeine Grundleistungen')";
+	00.0810 FALSCH ALS SUBITEM!!!"+ Injektion, intravenös, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')";
+	
+	00.0890 "Gefässzugang, Venaesectio durch den Facharzt beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen"
+	00.0900 "Gefässzugang, Venaesectio durch den Facharzt beim Kind bis 7 Jahre" (7 Jahre (+30 Tage))
+	00.0910 "Gefässzugang, Venaesectio durch den Facharzt bei Frühgeborenen und Neugeborenen" (<= 1 Monat (+ 7 Tage) )
+	
+	00.0980 "Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze"
+	00.0990 FALSCH ALS SUBITEM!!! "+ Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre"
+	
+	00.0995 "Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze";
+	00.0996 FALSCH ALS SUBITEM!!! "+ Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre";
+	
+	01.0210 "Härtende Verbände (Zirkulärverbände/Schienen), Kategorie I";
+	01.0250 "+ Zuschlag bei härtenden Verbänden beim Kind bis 7 Jahre";
+	
+	Kapitel 03 +++++ not yet implemented
+	Kapitel 05 +++++ not yet implemented
+	
+	08.0480 ALTER WIRD NOCH NICHT GETESTET "Orientierende Motilitätsprüfung und Stereopsisprüfung beim Kind bis 7 Jahre, beidseitig";""
+	
+	08.0650 "Tränenwegsondierung, einseitig";
+	08.0660 "+ Zuschlag beim Kind bis 7 Jahre bei Tränenwegsondierung";
+	
+	08.2150 "Fremdkörperentfernung aus Kornea und Sklera, tiefe Lage, mit Entfernung des Rosthofes, erster Fremdkörper";
+	08.2170 "+ Zuschlag für Fremdkörperentfernung(en) aus Kornea und Sklera beim Kind bis 7 Jahre";
+	
+	08.2760" Extractio lentis/Phakoemulsifikation, inkl. Implantation einer künstlichen Linse und Einsetzen eines Kapselspannringes";
+	08.2830" + Zuschlag beim Kind bis 7 Jahre bei Extractio lentis/Phakoemulsifikation";
+	
+	09.0120 "Untersuchung mit Ohrmikroskop, pro Seite";
+	09.0130 FALSCH ALS SUBITEM!!! "+ Untersuchung mit Ohrmikroskop beim Kind bis 7 Jahre";
+	
+	09.0310 "Reintonaudiogramm, Luftleitung, pro Seite";
+	09.0320 "+ Zuschlag beim Kind bis 7 Jahre bei Reintonaudiogramm, Luftleitung, pro Seite";
+	
+	09.0340 "Reintonaudiogramm, Luftleitung und Knochenleitung, beidseitig";
+	09.0350 "+ Zuschlag beim Kind bis 7 Jahre bei Reintonaudiogramm, Luftleitung und Knochenleitung, beidseitig";
+	
+	09.0560 "Registrierung otoakustischer Emissionen, beidseitig";
+	09.0570 "+ Zuschlag beim Kind bis 7 Jahre bei Registrierung otoakustischer Emissionen, beidseitig";
+	
+	09.0930 "Erschwerte Gehörgangsreinigung mittels Mikroskop, pro Seite";
+	09.0940 "+ Zuschlag beim Kind bis 7 Jahre bei erschwerter Gehörgangsreinigung mittels Mikroskop, pro Seite";
+	
+	09.1105 "Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als alleinige Leistung";
+	09.1106 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Erwachsenen älter als 16 Jahre, pro Seite";
+	09.1107 "+ Einlage eines Röhrchens bei Parazentese des Trommelfells beim Erwachsenen älter als 16 Jahre, pro Seite";
+	09.1110 "Parazentese des Trommelfelles beim Kind/Jugendlichen bis 16 Jahre, pro Seite, als alleinige Leistung";
+	09.1120 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Kind/Jugendlichen bis 16 Jahre , pro Seite";
+	09.1130 "+ Einlage eines Röhrchens bei Parazentese des Trommelfells beim Kind/Jugendlichen bis 16 Jahre , pro Seite";
+	09.1140 "(+) Parazentese des Trommelfelles beim Kind/Jugendlichen bis 16 Jahre, pro Seite, als Zuschlagsleistung";
+	09.1145 "(+) Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als Zuschlagsleistung";
+	
+	10.0110 "Reposition einer Septumluxation beim Neugeborenen";
+	
+	10.0630 "Endonasale Fremdkörperextraktion aus dem mittleren/hinteren Drittel der Nasenhöhle";
+	10.0640 "+ Zuschlag beim Kind bis 7 Jahre bei endonasaler Fremdkörperextraktion";
+	
+	15.0130 "Kleine Spirometrie mit Dokumentation der Flussvolumenkurve"
+	15.0140 "+ Zuschlag beim Kind bis 7 Jahre bei Spirometrie mit Dokumentation der Flussvolumenkurve";
+	
+	15.0160 "Vollständige Spirometrie und Resistance (Plethysmografie)";
+	15.0170 "+ Zuschlag beim Kind/Jugendlichen bis 16 Jahre bei vollständiger Spirometrie und Resistance (Plethysmografie)";
+	
+	15.0180 "Spirometrie und FRC-Messung/Plethysmografie beim Kind bis 3 Jahre";
+	
+	15.0410 "Bronchoskopie, starr, diagnostisch und therapeutisch";
+	15.0430 "+ Zuschlag beim Kind bis 7 Jahre bei starrer/flexibler Bronchoskopie";
+	
+	17.0010 "Elektrokardiogramm ({EKG})";
+	17.0040 "+ Zuschlag beim Kind bis 7 Jahre bei Elektrokardiogramm ({EKG})";
+	
+	17.0230 "Echokardiografie, transthorakal, Kontrolluntersuchung";
+	17.0240 "Echokardiografie, transthorakal, beim Kind bis 3 Jahre";
+	17.0250 "Echokardiografie, transthorakal, beim Kind/Jugendlichen ab 3 bis 16 Jahre";
+	
+	17.0260 "Echokardiografie, transoesophageal";
+	17.0270 "+ Echokardiografie, transoesophageal beim Kind bis 7 Jahre";
+	
+	17.0710 "Kardangiografie, Grundleistung I";
+	17.0720 "+ Zuschlag zur Grundleistung I beim Kind bis 7 Jahre";
+	17.0730 "+ Zuschlag zur Grundleistung I beim Kind/Jugendlichen ab 7 bis 16 Jahre";
+	
+	19.0060 "Legen einer Magensonde durch den Facharzt";
+	19.0070 "+ Zuschlag beim Kind bis 7 Jahre beim Legen einer Magensonde durch den Facharzt";
+	
+	19.1750 "Digitale Ausräumung des Rektums durch den Facharzt beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen";
+	19.1760 "Digitale Ausräumung des Rektums durch den Facharzt beim Kind bis 7 Jahre";
+	
+	20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
+	20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
+	20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
+	20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
+	20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+	20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+	20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+	20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+	20.0330 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, einseitig";
+	20.0340 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, beidseitig";
+	20.0350 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
+	20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+	20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
+	20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
+	20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+	20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+	20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+	20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+	20.0460 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, einseitig";
+	20.0470 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, beidseitig";
+	20.0480 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
+	20.0490 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+	
+	20.1350 "Entfernung retroperitonealer Tumoren, beim Kind bis 7 Jahre, als alleinige Leistung exkl. Zugang";"20.2840"
+	
+	20.2840 "Entfernung retroperitonealer Tumoren, beim Kind/Jugendlichen und Erwachsenen älter als 7 Jahre, als alleinige Leistung exkl. Zugang";
+	20.2850 "Operative Korrekturversorgung bei kongenitalen Darmanomalien/Malrotation im Frühkindesalter bis 2 Jahre";
+	
+	21.0010 "Blasenkatheterismus, diagnostisch und therapeutisch beim Knaben/Mann älter als 16 Jahre, durch den Facharzt";
+	21.0020 "Blasenkatheterismus, diagnostisch und therapeutisch beim Mädchen/bei der Frau älter als 16 Jahre, durch den Facharzt";
+	21.0030 "Blasenkatheterismus, diagnostisch und therapeutisch beim Kind/Jugendlichen bis 16 Jahre, durch den Facharzt";
+	
+	21.0110 "Urethroskopie, urethraler Zugang beim Knaben/Mann älter als 16 Jahre";
+	21.0120 "+ Zuschlag für perinealen Zugang bei Urethroskopie";
+	21.0130 "+ Biopsie bei Urethroskopie";
+	21.0140 "+ Fulguration/Abtragung einer Läsion bei Urethroskopie, unabhängig der Anzahl";
+	21.0150	"+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Urethroskopie, unabhängig der Anzahl";
+	21.0160 "Urethroskopie, urethraler Zugang beim Mädchen/bei der Frau älter als 16 Jahre";
+	21.0170 "+ Zuschlag für perinealen Zugang bei Urethroskopie";
+	21.0180 "+ Biopsie bei Urethroskopie";
+	21.0190 "+ Fulguration/Abtragung einer Läsion bei Urethroskopie, unabhängig der Anzahl";
+	21.0200 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Urethroskopie, unabhängig der Anzahl";
+	21.0210 "Urethroskopie, urethraler Zugang beim Kind/Jugendlichen bis 16 Jahre";
+	21.0220 "+ Resektion posteriore Urethralklappen beim Kind/Jugendlichen bis 16 Jahre";
+	
+	///////////////
+	21.0310 "Zystoskopie/Urethrozystoskopie beim Knaben/Mann älter als 16 Jahre";
+	21.0320 "+ Diagnostische Endoskopie bei Zystoskopie/Urethrozystoskopie";
+	21.0330 "+ Biopsie(n) bei Zystoskopie/Urethrozystoskopie";
+	21.0340 "+ Fulguration/Abtragung einer Läsion bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
+	21.0350 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
+	21.0360 "+ Lithotripsie, inkl. Trümmerentfernung, bei Zystoskopie/Urethrozystoskopie";
+	21.0370 "+ Einlage Doppel-J-Katheter bei Zystoskopie/Urethrozystoskopie";
+	21.0380 "+ Ureterenkatheterismus, bei Zystoskopie/Urethrozystoskopie, einseitig";
+	21.0390 "+ Ureterenkatheterismus, bei Zystoskopie/Urethrozystoskopie, beidseitig";
+	21.0400 "+ Steinmanipulation, Push-Back bei Zystoskopie/Urethrozystoskopie, retrograd, pro Seite";
+	21.0410 "Zystoskopie/Urethrozystoskopie beim Mädchen/bei der Frau älter als 16 Jahre";
+	21.0420 "+ Diagnostische Endoskopie bei Zystoskopie/Urethrozystoskopie";
+	21.0430 "+ Biopsie(n) bei Zystoskopie/Urethrozystoskopie";
+	21.0440 "+ Fulguration/Abtragung einer Läsion bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
+	21.0450 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
+	21.0460 "Zystoskopie/Urethrozystoskopie beim Kind/Jugendlichen bis 16 Jahre";
+	21.0470 "Zystoskopie durch Stoma";
+	
+	// +++++ weiterführen
+	*/
+	public static Object[][] childrensAdditions = {
+		{
+			"00.0010", "00.0040", 6
+		}, {
+			"00.0060", "00.0040", 6
+		}, {
+			"00.0060", "00.0040", 6
+		},
+	};
+	// +++++ END children's additions
+	
+	// +++++ START minutes
+	/**
+	 * these string will be stripped/replaced from the original text shown in the tarmed tree when
+	 * doing automatic 5-minute-chunk additions.
+	 */
+	// TODO languages 
 	public static String[][] yearReplacements = {
 		{
 			" (Grundkonsultation)", ""
@@ -144,77 +294,138 @@ public class TarmedOptifier implements IOptifier {
 		},
 	};
 	
+	// *** the first  entry is first  5-minute-chunks for all patients - this will always be sent to this method
+	// *** the second entry is middle 5-minute-chunks for 6-75 years
+	// *** the third  entry is last   5-minute-chunks for all patients
+	// *** the fourth entry is middle 5-minute-chunks for children/olders (max 4*)
+	// *** the fifth  entry is middle 5-minute-chunks for 6-75 years with more time needed (max 4*)
+	// *** test if added code is listed in minuteCodeMaps
+	public static String[][] fiveMinuteChunkCodeMaps = {
+		{
+			"00.0010", "00.0020", "00.0030", "00.0025", "00.0026"
+		}, {
+			"00.0060", "00.0070", "00.0080", "00.0075", "00.0076"
+		}, {
+			"00.0110", "00.0120", "00.0130", "00.0125", "00.0126"
+		}, {
+			// ***"Telefonische, komplementärmedizinische Konsultation durch den Facharzt, 5 Min."
+			"00.1880", "00.1890", "00.1900", "00.1895", "00.1896"
+		}, {
+			// *** Dermatologische Lasertherapie durch den Facharzt
+			"04.0370", "04.0380", "04.0390"
+		}, {
+			// *** "Akupunktur, Konsultation durch den Facharzt, erste 5 Min.";"00.1710"
+			"00.1710", "00.1720", "00.1730"
+		}, {
+			// *** "Neuraltherapie, Konsultation durch den Facharzt, erste 5 Min.";"00.1740"
+			"00.1740", "00.1750", "00.1760"
+		}, {
+			// *** "Homöopathie, Konsultation durch den Facharzt, erste 5 Min.";"00.1770"
+			"00.1770", "00.1780", "00.1790"
+		}, {
+			// *** "Traditionelle Chinesische Medizin ({TCM}), Konsultation durch den Facharzt, erste 5 Min.";"00.1810"
+			"00.1810", "00.1820", "00.1830"
+		}, {
+			// *** "Anthroposophische Medizin, Konsultation durch den Facharzt, erste 5 Min.";"00.1840"
+			"00.1840", "00.1850", "00.1860"
+		}, {
+			// *** "Phytotherapie durch Facharzt, Konsultation durch den Facharzt, erste 5 Min.";"00.1870"
+			"00.1870", "00.1871", "00.1872"
+		}
+	};
+	//	public static String[][] fiveMinuteChunkCodeMapsNoChildren = {
+	//		{
+	//			// "Akupunktur, Konsultation durch den Facharzt, erste 5 Min.";"00.1710"
+	//			"00.1710", "00.1720", "00.1730"
+	//		}, {
+	//			// "Neuraltherapie, Konsultation durch den Facharzt, erste 5 Min.";"00.1740"
+	//			"00.1740", "00.1750", "00.1760"
+	//		}, {
+	//			// "Homöopathie, Konsultation durch den Facharzt, erste 5 Min.";"00.1770"
+	//			"00.1770", "00.1780", "00.1790"
+	//		}, {
+	//			// "Traditionelle Chinesische Medizin ({TCM}), Konsultation durch den Facharzt, erste 5 Min.";"00.1810"
+	//			"00.1810", "00.1820", "00.1830"
+	//		}, {
+	//			// "Anthroposophische Medizin, Konsultation durch den Facharzt, erste 5 Min.";"00.1840"
+	//			"00.1840", "00.1850", "00.1860"
+	//		}, {
+	//			// "Phytotherapie durch Facharzt, Konsultation durch den Facharzt, erste 5 Min.";"00.1870"
+	//			"00.1870", "00.1871", "00.1872"
+	//		}
+	//	};
+	
 	public static String[][] ageGroupLists = {
 		// *** col 1: 6-75
 		// *** col 0: <6, >75
 		// *** col 2: 6-75, erhöhter Aufwand
 		{
-			"00.0415", "00.0416", "00.0417",
-			"Kleine Untersuchung durch den Facharzt für Grundversorgung"
+			// "Kleine Untersuchung durch den Facharzt für Grundversorgung"
+			"00.0415", "00.0416", "00.0417"
 		}, {
-			"00.0435", "00.0436", "00.0437",
-			"Kleine rheumatologische Untersuchung durch den Facharzt für Rheumatologie, Physikalische Medizin und Rehabilitation"
+			// "Kleine rheumatologische Untersuchung durch den Facharzt für Rheumatologie, Physikalische Medizin und Rehabilitation"
+			"00.0435", "00.0436", "00.0437"
 		}, {
-			"00.0510", "00.0515", "00.0516",
-			"Spezifische Beratung durch den Facharzt für Grundversorgung"
+			// "Spezifische Beratung durch den Facharzt für Grundversorgung"
+			"00.0510", "00.0515", "00.0516"
 		}, {
-			"00.0530", "00.0535", "00.0536", "Genetische u/o pränatale Beratung durch den Facharzt"
+			// "Genetische u/o pränatale Beratung durch den Facharzt"
+			"00.0530", "00.0535", "00.0536"
 		}, {
-			"00.0610", "00.0615", "00.0616",
-			"Instruktion von Selbstmessungen, Selbstbehandlungen durch den Facharzt"
+			// "Instruktion von Selbstmessungen, Selbstbehandlungen durch den Facharzt"
+			"00.0610", "00.0615", "00.0616"
 		}, {
-			"00.1370", "00.1375", "00.1376", "Nachbetreuung/Betreuung/Überwachung in der Arztpraxis"
+			//"Nachbetreuung/Betreuung/Überwachung in der Arztpraxis"
+			"00.1370", "00.1375", "00.1376"
 		}, {
-			"02.0060", "02.0065", "02.0066",
-			"Telefonische Konsultation durch den Facharzt für Psychiatrie"
+			//"Telefonische Konsultation durch den Facharzt für Psychiatrie"
+			"02.0060", "02.0065", "02.0066"
 		}, {
-			"02.0150", "02.0155", "02.0156",
-			"Telefonische Konsultation durch behandelnden Psychologen/Psychotherapeuten"
+			//"Telefonische Konsultation durch behandelnden Psychologen/Psychotherapeuten"
+			"02.0150", "02.0155", "02.0156"
 		}, {
-			"04.0015", "04.0016", "04.0017", "Untersuchung durch den Facharzt für Dermatologie"
+			//"Untersuchung durch den Facharzt für Dermatologie"
+			"04.0015", "04.0016", "04.0017"
 		}, {
-			"00.0050", "00.0055", "00.0056",
-			"Vorbesprechung diagnostischer/therapeutischer Eingriffe mit Patienten/Angehörigen durch den Facharzt"
+			//"Vorbesprechung diagnostischer/therapeutischer Eingriffe mit Patienten/Angehörigen durch den Facharzt"
+			"00.0050", "00.0055", "00.0056"
 		}, {
-			"00.0141", "00.0131", "00.0161", "Aktenstudium in Abwesenheit des Patienten"
+			//"Aktenstudium in Abwesenheit des Patienten"
+			"00.0141", "00.0131", "00.0161"
 		}, {
-			"00.0142", "00.0132", "00.0162",
-			"Erkundigungen bei Dritten in Abwesenheit des Patienten"
+			//"Erkundigungen bei Dritten in Abwesenheit des Patienten"
+			"00.0142", "00.0132", "00.0162"
 		}, {
-			"00.0143", "00.0133", "00.0163",
-			"Auskünfte an Angehörige oder andere Bezugspersonen des Patienten in Abwesenheit des Patienten"
+			//"Auskünfte an Angehörige oder andere Bezugspersonen des Patienten in Abwesenheit des Patienten"
+			"00.0143", "00.0133", "00.0163"
 		}, {
-			"00.0144", "00.0134", "00.0164",
-			"Besprechungen mit Therapeuten und Betreuern des Patienten in Abwesenheit des Patienten"
+			//"Besprechungen mit Therapeuten und Betreuern des Patienten in Abwesenheit des Patienten"
+			"00.0144", "00.0134", "00.0164"
 		}, {
-			"00.0145", "00.0135", "00.0165",
-			"Überweisungen an Konsiliarärzte in Abwesenheit des Patienten"
+			//"Überweisungen an Konsiliarärzte in Abwesenheit des Patienten"
+			"00.0145", "00.0135", "00.0165"
 		}, {
-			"00.0146", "00.0136", "00.0166",
-			"Ausstellen von Rezepten oder Verordnungen ausserhalb von Konsultation, Besuch und telefonischer Konsultation in Abwesenheit des Patienten"
+			//"Ausstellen von Rezepten oder Verordnungen ausserhalb von Konsultation, Besuch und telefonischer Konsultation in Abwesenheit des Patienten"
+			"00.0146", "00.0136", "00.0166"
 		}, {
-			"00.0147", "00.0137", "00.0167",
-			"Diagnostische Leistung am Institut für Pathologie/Histologie/Zytologie in Abwesenheit des Patienten"
+			//"Diagnostische Leistung am Institut für Pathologie/Histologie/Zytologie in Abwesenheit des Patienten"
+			"00.0147", "00.0137", "00.0167"
 		}, {
-			"00.0148", "00.0138", "00.0168", "Tumorboard in Abwesenheit des Patienten"
+			//"Tumorboard in Abwesenheit des Patienten"
+			"00.0148", "00.0138", "00.0168"
 		}, {
-			"02.0060", "02.0065", "02.0066",
-			"Telefonische Konsultation durch den Facharzt für Psychiatrie"
+			//"Telefonische Konsultation durch den Facharzt für Psychiatrie"
+			"02.0060", "02.0065", "02.0066"
 		}, {
-			"02.0150", "02.0155", "02.0156",
-			"Telefonische Konsultation durch behandelnden Psychologen/Psychotherapeuten"
+			//"Telefonische Konsultation durch behandelnden Psychologen/Psychotherapeuten"
+			"02.0150", "02.0155", "02.0156"
 		}
 	};
 	
-	static String[][] minuteCodeMapsList = {
-		{
-			"00.0020", "00.0025", "00.0030"
-		}, {
-			"00.0070", "00.0075", "00.0080"
-		}, {
-			"00.0120", "00.0125", "00.0130"
-		}
+	public static String[][][] codeMapListArrays = {
+		fiveMinuteChunkCodeMaps, /*fiveMinuteChunkCodeMapsNoChildren, */ageGroupLists
 	};
+	
 	// +++++ END minutes
 	
 	/**
@@ -236,6 +447,60 @@ public class TarmedOptifier implements IOptifier {
 		return null;
 	}
 	
+	// +++++ START minutes
+	private Query<TarmedLeistung> childrenQuery = new Query<>(TarmedLeistung.class);
+	
+	/**
+	 * get all the tarmed children for a given parent element for a given validity date
+	 * 
+	 * @param parentElement
+	 *            the tarmed parent element
+	 * @param date
+	 *            the date for which to search the tarmed children
+	 * @return TarmedLeistung[], the children found
+	 */
+	public TarmedLeistung[] getTarmedChildren(TarmedLeistung parentElement, TimeTool date){
+		if (parentElement instanceof TarmedLeistung) {
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
+			String strListValidFrom = simpleDateFormat.format(date.getTime());
+			TarmedLeistung parentLeistung = (TarmedLeistung) parentElement;
+			childrenQuery.clear();
+			childrenQuery.add(TarmedLeistung.FLD_PARENT, Query.EQUALS, parentLeistung.getId());
+			childrenQuery.add(TarmedLeistung.FLD_GUELTIG_VON, Query.LESS_OR_EQUAL,
+				strListValidFrom);
+			childrenQuery.add(TarmedLeistung.FLD_GUELTIG_BIS, Query.GREATER_OR_EQUAL,
+				strListValidFrom);
+			childrenQuery.orderBy(false, TarmedLeistung.FLD_CODE);
+			List<TarmedLeistung> internalResult = childrenQuery.execute();
+			return internalResult.toArray(new TarmedLeistung[internalResult.size()]);
+		}
+		return null;
+	}
+	
+	/**
+	 * Get a list of possible parents for a given child tarmed inside the current tree part. (Those
+	 * items staring with "+")
+	 * 
+	 * @param childElement
+	 * @param date
+	 * @return the list of matching parent items inside the current tree part. This may be more than
+	 *         one position.
+	 */
+	public TarmedLeistung[] getMatchingTarmedParents(TarmedLeistung childElement, TimeTool date){
+		String theParent = childElement.getParent();
+		TarmedLeistung tarm = TarmedLeistung.load(theParent);
+		TarmedLeistung[] childrenTarmedLeistungen = getTarmedChildren(tarm, date);
+		ArrayList<TarmedLeistung> matchingChildren = new ArrayList<TarmedLeistung>();
+		for (TarmedLeistung tml : childrenTarmedLeistungen) {
+			System.out.println(tml.getText());
+			if (tml.getHierarchy(date).contains(childElement.getCode()))
+				matchingChildren.add(tml);
+		}
+		return matchingChildren.toArray(new TarmedLeistung[matchingChildren.size()]);
+	}
+	
+	// +++++ END minutes
+	
 	/**
 	 * Eine Verrechnungsposition zufügen. Der Optifier muss prüfen, ob die Verrechnungsposition im
 	 * Kontext der übergebenen Konsultation verwendet werden kann und kann sie ggf. zurückweisen
@@ -254,21 +519,41 @@ public class TarmedOptifier implements IOptifier {
 		
 		bOptify = CoreHub.userCfg.get(Preferences.LEISTUNGSCODES_OPTIFY, true);
 		
+		//bOptify = false;
+		
 		TarmedLeistung tc = (TarmedLeistung) code;
+		
+		// +++++ START automatic addition of needed parent codes
+		// *** must add before getting lst (see below)
+		if (bOptify) {
+			TarmedLeistung[] matchingParents =
+				getMatchingTarmedParents(tc, new TimeTool(kons.getDatum()));
+			if (matchingParents.length > 0) {
+				//			SWTHelper.alert("", "parent data should be added: \n" + matchingParents[0].getCode()
+				//				+ " " + matchingParents[0].getText());
+				//add(getKonsVerrechenbar(matchingParents[0].getCode(), kons), kons);
+				Result<IVerrechenbar> addResult =
+					kons.addLeistung(getKonsVerrechenbar(matchingParents[0].getCode(), kons));
+				//return kons.addLeistung(tc);
+			}
+		}
+		// +++++ END automatic addition of needed parent codes
+		
 		List<Verrechnet> lst = kons.getLeistungen();
+		
 		/*
 		 * TODO Hier checken, ob dieser code mit der Dignität und
 		 * Fachspezialisierung des aktuellen Mandanten usw. vereinbar ist
 		 */
 		
 		Hashtable<String, String> ext = tc.loadExtension();
-		
 		// +++++ START minutes
+		boolean isAfter2018 = new TimeTool(kons.getDatum()).get(Calendar.YEAR) >= 2018;
 		String tcid = code.getCode();
-		doMinuteOptify = true;
-		if (doMinuteOptify) {
-			String law = kons.getFall().getRequiredString("Gesetz");
+		doMinuteOptify = false;
+		if (doMinuteOptify && isAfter2018) {
 			TimeTool date = new TimeTool(kons.getDatum());
+			String law = kons.getFall().getRequiredString("Gesetz");
 			
 			// ****************************************
 			// *** age group "redirects"
@@ -385,7 +670,7 @@ public class TarmedOptifier implements IOptifier {
 		}
 		
 		// +++++ START minutes
-		if (doMinuteOptify) {
+		if (doMinuteOptify && isAfter2018) {
 			String law = kons.getFall().getRequiredString("Gesetz");
 			TimeTool date = new TimeTool(kons.getDatum());
 			
@@ -446,74 +731,100 @@ public class TarmedOptifier implements IOptifier {
 						}
 						
 						// ***  test if current kons is for < 6 years or > 75 years
-						boolean isChildOrOlder = false; // *** default (NOT KVG)
-						if (law.equalsIgnoreCase("KVG")) {
-							IVerrechenbar childrensVerrechenbar =
-								TarmedLeistung.getFromCode(codeMap[2], date, law);
-							TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
-							Hashtable<String, String> extChildren = tc2.loadExtension();
-							String ageLimits = extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
-							isChildOrOlder = true;
-							if (ageLimits != null && !ageLimits.isEmpty()) {
-								String errorMessage = checkAge(ageLimits, kons);
-								if (errorMessage != null)
-									isChildOrOlder = false;
+						boolean isChildOrOlder = false; // *** default (NOT KVG) or old version/UVG-Version
+						try {
+							if (law.equalsIgnoreCase("KVG")) {
+								IVerrechenbar childrensVerrechenbar =
+									TarmedLeistung.getFromCode(codeMap[3], date, law);
+								TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
+								Hashtable<String, String> extChildren = tc2.loadExtension();
+								String ageLimits =
+									extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
+								isChildOrOlder = true;
+								if (ageLimits != null && !ageLimits.isEmpty()) {
+									String errorMessage = checkAge(ageLimits, kons);
+									if (errorMessage != null)
+										isChildOrOlder = false;
+								}
 							}
+						} catch (Exception ex) {
+							// *** no children's code defined -> isChildOrOlder = false
 						}
 						
 						// *** 
 						String newCode = tcid;
 						switch (numberOfFiveMinuteChunks) {
 						case 0:
+							// *** first entry always: "erste 5 Min."
 							newCode = codeMap[0];
+							lastKonsUsed = null;
 							break;
 						case 1:
-							newCode = codeMap[4];
+							// *** if only two entries: add "letzte 5 Min."
+							newCode = codeMap[2];
+							lastKonsUsed = null;
 							break;
 						case 2:
 						case 3:
+							// *** if 15 or 20 minutes: add "jede weiteren 5 Min."
 							if (isChildOrOlder)
-								newCode = codeMap[2];
+								newCode = codeMap[3];
 							else
 								newCode = codeMap[1];
+							lastKonsUsed = null;
 							break;
 						case 4:
 						case 5:
-							if (isChildOrOlder)
-								newCode = codeMap[2];
-							else {
-								if (law.equalsIgnoreCase("KVG")) {
-									boolean okClicked = SWTHelper.askYesNo("Verrechnung",
-										"Achtung: über 20 Minuten mit spezieller Notiz in der KG/Begründung für die KK");
-									if (okClicked) {
-										IVerrechenbar toBeAdded =
-											TarmedLeistung.getFromCode(codeMap[3], date, law);
-										// *** must remove existing 00.0xx0 and replace by 00.0xx6
-										if (numberOfFiveMinuteChunks == 4) {
-											for (Verrechnet v : lst) {
-												String theCode = v.getCode();
-												if (theCode.equalsIgnoreCase(codeMap[1]))
-													kons.removeLeistung(v);
-											}
-											kons.addLeistung(toBeAdded);
-											kons.addLeistung(toBeAdded);
+							if (codeMap.length > 3) {
+								if (isChildOrOlder)
+									newCode = codeMap[3];
+								else {
+									if (law.equalsIgnoreCase("KVG")) {
+										boolean okToAdd = true;
+										if (!kons.equals(lastKonsUsed)) {
+											okToAdd = SWTHelper.askYesNo("Verrechnung",
+												"Achtung: über 20 Minuten mit spezieller Notiz in der KG/Begründung für die KK");
 										}
-										// *** add new 00.0xx6 version
-										return kons.addLeistung(toBeAdded);
+										if (okToAdd) {
+											IVerrechenbar toBeAdded =
+												TarmedLeistung.getFromCode(codeMap[4], date, law);
+											// *** must remove existing 00.0xx0 and replace by 00.0xx6
+											if (numberOfFiveMinuteChunks == 4) {
+												for (Verrechnet v : lst) {
+													String theCode = v.getCode();
+													if (theCode.equalsIgnoreCase(codeMap[1]))
+														kons.removeLeistung(v);
+												}
+												kons.addLeistung(toBeAdded);
+												kons.addLeistung(toBeAdded);
+											}
+											lastKonsUsed = kons;
+											// *** add new 00.0xx6 version
+											return kons.addLeistung(toBeAdded);
+										} else {
+											return new Result<IVerrechenbar>(null);
+										}
 									} else {
-										return new Result<IVerrechenbar>(null);
+										return new Result<IVerrechenbar>(Result.SEVERITY.WARNING,
+											EXKLUSION, "Maximal 20 Minuten abrechenbar.", //$NON-NLS-1$
+											null, false);
 									}
-								} else {
-									return new Result<IVerrechenbar>(Result.SEVERITY.WARNING,
-										EXKLUSION, "Maximal 20 Minuten abrechenbar.", //$NON-NLS-1$
-										null, false);
 								}
-							}
+							} else
+								newCode = codeMap[1];
 							break;
 						case 6:
-							return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, EXKLUSION,
-								"mehr als 30 geht grunzipiell nicht.", //$NON-NLS-1$
-								null, false);
+							if (codeMap.length > 3) {
+								return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, EXKLUSION,
+									"mehr als 30 geht grunzipiell nicht.", //$NON-NLS-1$
+									null, false);
+							} else {
+								newCode = codeMap[1];
+							}
+							lastKonsUsed = null;
+						default:
+							newCode = codeMap[1];
+							lastKonsUsed = null;
 						}
 						
 						// if the code has been changed, then recall proc with
@@ -923,6 +1234,9 @@ public class TarmedOptifier implements IOptifier {
 			}
 			if (v.getVerrechenbar() instanceof TarmedLeistung) {
 				TarmedLeistung tl = (TarmedLeistung) v.getVerrechenbar();
+				List<String> blubb = tl.getHierarchy(konsDate);
+				TarmedLeistung tarm = TarmedLeistung.load(blubb.get(0));
+				String txt = tarm.getText();
 				if (tl.getHierarchy(konsDate).contains(slave.getCode())) { //$NON-NLS-1$
 					ret.add(v);
 				}
