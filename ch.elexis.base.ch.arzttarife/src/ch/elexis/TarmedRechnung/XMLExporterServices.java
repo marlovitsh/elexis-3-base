@@ -212,10 +212,10 @@ public class XMLExporterServices {
 		List<Element> sr = servicesElement.getChildren();
 		for (Element el : sr) {
 			try {
-				XMLExporterUtil.negate(el, XMLExporter.ATTR_QUANTITY);//$NON-NLS-1$
-				XMLExporterUtil.negate(el, XMLExporter.ATTR_AMOUNT_MT);//$NON-NLS-1$
-				XMLExporterUtil.negate(el, XMLExporter.ATTR_AMOUNT_TT);//$NON-NLS-1$
-				XMLExporterUtil.negate(el, XMLExporter.ATTR_AMOUNT);//$NON-NLS-1$
+				XMLExporterUtil.negate(el, XMLExporter.ATTR_QUANTITY);// $NON-NLS-1$
+				XMLExporterUtil.negate(el, XMLExporter.ATTR_AMOUNT_MT);// $NON-NLS-1$
+				XMLExporterUtil.negate(el, XMLExporter.ATTR_AMOUNT_TT);// $NON-NLS-1$
+				XMLExporterUtil.negate(el, XMLExporter.ATTR_AMOUNT);// $NON-NLS-1$
 			} catch (Exception ex) {
 				ExHandler.handle(ex);
 			}
@@ -258,7 +258,7 @@ public class XMLExporterServices {
 	public static XMLExporterServices buildServices(Rechnung rechnung, VatRateSum vatSummer){
 		XMLExporterServices ret =
 			new XMLExporterServices(new Element(ELEMENT_SERVICES, XMLExporter.nsinvoice));
-			
+		
 		List<Konsultation> konsultationen = rechnung.getKonsultationen();
 		
 		// To make the validator happy, the attribute date_begin must duplicate
@@ -319,7 +319,7 @@ public class XMLExporterServices {
 						(int) Math.round(tlTL * mult * zahl * primaryScale * secondaryScale));
 					Money mAmountLocal = new Money((int) Math
 						.round((tlAL + tlTL) * mult * zahl * primaryScale * secondaryScale));
-						
+					
 					// sum tax points and monetary value
 					ret.tpTarmedTL += tlTL * zahl;
 					ret.tpTarmedAL += tlAL * zahl;
@@ -574,7 +574,7 @@ public class XMLExporterServices {
 						TarmedRequirements.getEAN(konsultation.getMandant()));
 					el.setAttribute(ATTR_EAN_RESPONSIBLE,
 						XMLExporterUtil.getResponsibleEAN(konsultation));
-						
+					
 					ret.mUebrige.addMoney(mAmountLocal);
 				}
 				el.setAttribute(ATTR_SESSION, Integer.toString(session));
