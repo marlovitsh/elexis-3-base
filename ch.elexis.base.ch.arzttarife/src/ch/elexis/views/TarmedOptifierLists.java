@@ -3,8 +3,9 @@ package ch.elexis.views;
 import java.util.ArrayList;
 
 /**
- * Contains all the lists used by the optifier which are not clearly or fully defined inside the
- * official tarmed itself. This may be changing over time with changes of the tarmed. Do NOT place
+ * Contains all the lists used by the optifier with links between items which are not clearly or
+ * fully defined inside the official tarmed itself. Eg. age-groups, 5-minute-chunks,
+ * children-additions, etc. This may be changing over time with changes of the tarmed. Do NOT place
  * anything else in this file.
  */
 public class TarmedOptifierLists {
@@ -27,8 +28,8 @@ public class TarmedOptifierLists {
 	 * <li>first 5-minute-chunks</li>
 	 * <li>middle 5-minute-chunks</li>
 	 * <li>last 5-minute-chunks</li>
-	 * <li>middle 5-minute-chunks for childer/olders (max 4*) (if Berset's tarmed)</li>
-	 * <li>middle 5-minute-chunks for 6-75 years with more time needed (max 4*) (if Berset's
+	 * <li>middle 5-minute-chunks for childer/olders (usually max 4*) (if Berset's tarmed)</li>
+	 * <li>middle 5-minute-chunks for 6-75 years with more time needed (usually max 4*) (if Berset's
 	 * tarmed)</li>
 	 * </ul>
 	 */
@@ -43,22 +44,22 @@ public class TarmedOptifierLists {
 			// *** "Telefonische Konsultation durch den Facharzt, 5 Min."
 			"00.0110", "00.0120", "00.0130", "00.0125", "00.0126"
 		}, {
-			// *** "Akupunktur, Konsultation durch den Facharzt, erste 5 Min.";"00.1710"
+			// *** "Akupunktur, Konsultation durch den Facharzt, erste 5 Min."
 			"00.1710", "00.1720", "00.1730"
 		}, {
-			// *** "Neuraltherapie, Konsultation durch den Facharzt, erste 5 Min.";"00.1740"
+			// *** "Neuraltherapie, Konsultation durch den Facharzt, erste 5 Min."
 			"00.1740", "00.1750", "00.1760"
 		}, {
-			// *** "Homöopathie, Konsultation durch den Facharzt, erste 5 Min.";"00.1770"
+			// *** "Homöopathie, Konsultation durch den Facharzt, erste 5 Min."
 			"00.1770", "00.1780", "00.1790"
 		}, {
-			// *** "Traditionelle Chinesische Medizin ({TCM}), Konsultation durch den Facharzt, erste 5 Min.";"00.1810"
+			// *** "Traditionelle Chinesische Medizin ({TCM}), Konsultation durch den Facharzt, erste 5 Min."
 			"00.1810", "00.1820", "00.1830"
 		}, {
-			// *** "Anthroposophische Medizin, Konsultation durch den Facharzt, erste 5 Min.";"00.1840"
+			// *** "Anthroposophische Medizin, Konsultation durch den Facharzt, erste 5 Min."
 			"00.1840", "00.1850", "00.1860"
 		}, {
-			// *** "Phytotherapie durch Facharzt, Konsultation durch den Facharzt, erste 5 Min.";"00.1870"
+			// *** "Phytotherapie durch Facharzt, Konsultation durch den Facharzt, erste 5 Min."
 			"00.1870", "00.1871", "00.1872"
 		}, {
 			// ***"Telefonische, komplementärmedizinische Konsultation durch den Facharzt, 5 Min."
@@ -244,32 +245,91 @@ public class TarmedOptifierLists {
 	// +++++ weiterführen
 	*/
 	/**
-	 * these string will be stripped/replaced from the original text shown in the tarmed tree when
+	 * These strings will be stripped/replaced from the original text shown in the tarmed tree when
 	 * doing automatic 5-minute-chunk additions.
 	 */
 	// TODO languages 
-	public final static String[][] yearReplacements = {
+	public final static String[][] itemReplacements5MinuteCodes = {
 		{
 			" (Grundkonsultation)", ""
 		}, {
+			" (consultation de base)", ""
+		}, {
+			" (consultazione di base)", ""
+		},
+		
+		{
 			" (Konsultationszuschlag)", ""
 		}, {
+			" (supplément de consultation)", ""
+		}, {
+			" (supplément de consultation)", ""
+		},
+		
+		{
 			" (Grundbesuch)", ""
 		}, {
+			" (visite de base)", ""
+		}, {
+			" (Visita a domicilio di base)", ""
+		},
+		
+		{
 			" (Besuchszuschlag)", ""
 		}, {
+			" (Besuchszuschlag_none)", ""
+		}, {
+			" (Besuchszuschlag_none)", ""
+		},
+		
+		{
 			" erste 5 Min.", " 5 Min."
 		}, {
+			" première période de 5 min", " 5 min"
+		}, {
+			" i primi 5 min.", " 5 min."
+		},
+		
+		{
 			" letzte 5 Min.", " 5 Min."
 		}, {
+			" dernière période de 5 min", " 5 min"
+		}, {
+			" ultimi 5 min.", " 5 min."
+		},
+		
+		{
 			" jede weiteren 5 Min.", " 5 Min."
 		}, {
+			" par période de 5 min en plus", " 5 min"
+		}, {
+			" par période de 5 min en plus", " 5 min"
+		},
+		
+		{
 			" bei Personen über 6 Jahren und unter 75 Jahren", ""
 		}, {
+			" pour les personnes au-dessus de 6 ans et de moins de 75 ans", ""
+		}, {
+			" per le persone di più di 6 anni e sotto 75 anni", ""
+		},
+		
+		{
 			" bei Kindern unter 6 Jahren und Personen über 75 Jahren", ""
 		}, {
+			" pour les enfants de moins de 6 ans et pour les personnes au-dessus de 75 ans", ""
+		}, {
+			" per i bambini sotto i sei anni e per le persone di più di 75 anni", ""
+		},
+		
+		{
 			" bei Personen über 6 Jahren und unter 75 Jahren mit einem erhöhten Behandlungsbedarf",
 			""
+		}, {
+			" pour les personnes au-dessus de 6 ans et de moins de 75 ans nécessitant plus de soins",
+			""
+		}, {
+			" per persone di più di 6 anni e sotto i 75 anni più bisognose di cure", ""
 		},
 	};
 	
@@ -293,36 +353,14 @@ public class TarmedOptifierLists {
 		},
 	};
 	
-	//	public static String[][] fiveMinuteChunkCodeMapsNoChildren = {
-	//		{
-	//			// *** "Akupunktur, Konsultation durch den Facharzt, erste 5 Min.";"00.1710"
-	//			"00.1710", "00.1720", "00.1730"
-	//		}, {
-	//			// *** "Neuraltherapie, Konsultation durch den Facharzt, erste 5 Min.";"00.1740"
-	//			"00.1740", "00.1750", "00.1760"
-	//		}, {
-	//			// *** "Homöopathie, Konsultation durch den Facharzt, erste 5 Min.";"00.1770"
-	//			"00.1770", "00.1780", "00.1790"
-	//		}, {
-	//			// *** "Traditionelle Chinesische Medizin ({TCM}), Konsultation durch den Facharzt, erste 5 Min.";"00.1810"
-	//			"00.1810", "00.1820", "00.1830"
-	//		}, {
-	//			// *** "Anthroposophische Medizin, Konsultation durch den Facharzt, erste 5 Min.";"00.1840"
-	//			"00.1840", "00.1850", "00.1860"
-	//		}, {
-	//			// *** "Phytotherapie durch Facharzt, Konsultation durch den Facharzt, erste 5 Min.";"00.1870"
-	//			"00.1870", "00.1871", "00.1872"
-	//		}
-	//	};
-	
 	/**
 	 * Age group list. Defines groups of actually equal treatments which differ only in the age
 	 * groups.<br>
 	 * The age groups are defined as follows:
 	 * <ul>
-	 * <li>first column: age 6 - 75</li>
-	 * <li>second column: age <6 or >75</li>
-	 * <li>third column: age 6 - 75, increased time requirement</li>
+	 * <li>first column: "normal age", usually 6 - 75</li>
+	 * <li>second column: children or older people, usually <6 or >75</li>
+	 * <li>third column: "normal age, increased time requirement", usually 6 - 75</li>
 	 * </ul>
 	 */
 	public final static String[][] ageGroupLists = {
@@ -389,32 +427,25 @@ public class TarmedOptifierLists {
 		}
 	};
 	
-	public final static Object[][][] codeMapListArrays = {
-		fiveMinuteChunkCodeMaps, /*fiveMinuteChunkCodeMapsNoChildren, */ageGroupLists
+	public final static String[][][] codeMapListArrays = {
+		fiveMinuteChunkCodeMaps, ageGroupLists
 	};
 	
 	/**
-	 * internal
+	 * contains an array of codes that are simply skipped for optifiying because they are added by
+	 * the procs themselves.
 	 */
-	public static String[] noRepeating;
+	public static ArrayList<String> skipCodesArray = new ArrayList<String>();
 	
 	static {
-		ArrayList<String> arr = new ArrayList<String>();
-		for (Object[] sa : fiveMinuteChunkCodeMaps)
-			for (int i = 1; i < sa.length; i++) {
-				String s = (String) sa[i];
-				arr.add(s);
-			}
-		
-		for (Object[] sa : ageGroupLists)
-			for (int i = 1; i < sa.length; i++) {
-				String s = (String) sa[i];
-				arr.add(s);
-			}
-		
-		noRepeating = arr.toArray(new String[arr.size()]);
-		
-		// ***
+		for (String[][] saa : codeMapListArrays) {
+			for (String[] sa : saa)
+				// *** add all items except the first one
+				for (int i = 1; i < sa.length; i++) {
+					String s = sa[i];
+					skipCodesArray.add(s);
+				}
+		}
 	}
 	
 }

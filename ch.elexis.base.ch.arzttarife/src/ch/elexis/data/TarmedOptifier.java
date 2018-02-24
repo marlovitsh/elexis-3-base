@@ -175,6 +175,63 @@ public class TarmedOptifier implements IOptifier {
 		return matchingChildren.toArray(new TarmedLeistung[matchingChildren.size()]);
 	}
 	
+	/**
+	 * test if a konsultation is inside age allowed by the limits defined for the given code
+	 * 
+	 * @param kons
+	 *            the Konsultation for which to test
+	 * @param code
+	 *            the code for which to test
+	 * @return true if in defined age, false if not
+	 */
+	public boolean isNormalAgeForCode(Konsultation kons, String code){
+		TimeTool date = new TimeTool(kons.getDatum());
+		String law = kons.getFall().getRequiredString("Gesetz");
+		
+		boolean bIsNormalAge = false; // *** default (NOT KVG)
+		try {
+			if (law.equalsIgnoreCase("KVG")) {
+				IVerrechenbar childrensVerrechenbar = TarmedLeistung.getFromCode(code, date, law);
+				TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
+				Hashtable<String, String> extChildren = tc2.loadExtension();
+				String ageLimits = extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
+				bIsNormalAge = true;
+				if (ageLimits != null && !ageLimits.isEmpty()) {
+					String errorMessage = checkAge(ageLimits, kons);
+					if (errorMessage != null)
+						bIsNormalAge = false;
+				}
+			}
+		} catch (Exception ex) {
+			// *** no children's code defined -> bIsNormalAge = false
+		}
+		return bIsNormalAge;
+	}
+	
+	public boolean isisis(Konsultation kons, String code){
+		TimeTool date = new TimeTool(kons.getDatum());
+		String law = kons.getFall().getRequiredString("Gesetz");
+		
+		boolean isChildOrOlder = false; // *** default (NOT KVG) or old version/UVG-Version
+		try {
+			if (law.equalsIgnoreCase("KVG")) {
+				IVerrechenbar childrensVerrechenbar =
+					TarmedLeistung.getFromCode(code /*codeMap[3]*/, date, law);
+				TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
+				Hashtable<String, String> extChildren = tc2.loadExtension();
+				String ageLimits = extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
+				isChildOrOlder = true;
+				if (ageLimits != null && !ageLimits.isEmpty()) {
+					String errorMessage = checkAge(ageLimits, kons);
+					if (errorMessage != null)
+						isChildOrOlder = false;
+				}
+			}
+		} catch (Exception ex) {
+			// *** no children's code defined -> isChildOrOlder = false
+		}
+		return isChildOrOlder;
+	}
 	// +++++ END minutes
 	
 	/**
@@ -182,7 +239,6 @@ public class TarmedOptifier implements IOptifier {
 	 * Kontext der übergebenen Konsultation verwendet werden kann und kann sie ggf. zurückweisen
 	 * oder modifizieren.
 	 */
-	
 	public Result<IVerrechenbar> add(IVerrechenbar code, Konsultation kons){
 		//		if (optifierDisabled)
 		//			return new Result<IVerrechenbar>(Result.SEVERITY.OK, PREISAENDERUNG, "Preis", null, //$NON-NLS-1$
@@ -258,42 +314,25 @@ public class TarmedOptifier implements IOptifier {
 		List<Verrechnet> lst = kons.getLeistungen();
 		
 		// +++++ START
-		// ****************************************3333333333333333333333333333333
-		// *** age group "redirects" - change to correct age group
+		// *********************************************************************
+		// *** age group "redirects" - change to correct age group, uses TarmedOptifierLists.ageGroupLists
 		if (doOptify5MinuteChunks && isKonsAfter2018) {
 			TimeTool date = new TimeTool(kons.getDatum());
 			String law = kons.getFall().getRequiredString("Gesetz");
 			
-			boolean skip = false;
-			for (String s : TarmedOptifierLists.noRepeating)
-				if (tcid.equalsIgnoreCase(s))
-					skip = true;
+			boolean skip = TarmedOptifierLists.skipCodesArray.contains(tcid);
 			if (!skip) {
-				String joinedAgeMap = "";
-				int ageGroupIx = -1;
-				for (ageGroupIx =
+				// *** test if in array TarmedOptifierLists.ageGroupLists
+				for (int ageGroupIx =
 					0; ageGroupIx < TarmedOptifierLists.ageGroupLists.length; ageGroupIx++) {
 					String[] ageMap = TarmedOptifierLists.ageGroupLists[ageGroupIx];
-					joinedAgeMap = "," + StringTool.join(ageMap, ",") + ",";
+					String joinedAgeMap = "," + StringTool.join(ageMap, ",") + ",";
 					if (joinedAgeMap.contains("," + tcid + ",")) {
 						// ***  test if current kons is for < 6 years or > 75 years
-						boolean isNormalAge = false; // *** default (NOT KVG)
-						if (law.equalsIgnoreCase("KVG")) {
-							IVerrechenbar childrensVerrechenbar =
-								TarmedLeistung.getFromCode(ageMap[0], date, law);
-							TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
-							Hashtable<String, String> extChildren = tc2.loadExtension();
-							String ageLimits = extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
-							isNormalAge = true;
-							if (ageLimits != null && !ageLimits.isEmpty()) {
-								String errorMessage = checkAge(ageLimits, kons);
-								if (errorMessage != null)
-									isNormalAge = false;
-							}
-						}
+						
 						// *** change to correct code for age
 						String newCode = tcid;
-						if (!isNormalAge) {
+						if (!isNormalAgeForCode(kons, ageMap[0])) {
 							newCode = ageMap[1]; // *** children and older
 						} else {
 							String normalAgeCode = ageMap[0];
@@ -301,8 +340,6 @@ public class TarmedOptifier implements IOptifier {
 							
 							// *** this may be code for normal-age or for normal-age-with-more-time-requirement
 							newCode = ageMap[0];
-							
-							// +++++ detect if already too many -> change to increased time requirement
 							
 							// *** count existing # for normal-age and for normal-age-more-time-needed
 							Verrechnet foundVerrechnet = null;
@@ -472,15 +509,12 @@ public class TarmedOptifier implements IOptifier {
 			TimeTool date = new TimeTool(kons.getDatum());
 			
 			// +++++ loop
-			boolean skip = false;
-			for (String s : TarmedOptifierLists.noRepeating)
-				if (tcid.equalsIgnoreCase(s))
-					skip = true;
+			boolean skip = TarmedOptifierLists.skipCodesArray.contains(tcid);
 			if (!skip) {
-				/* special handling for all tarmed 5-minute-chunks with first-middle-last 5 minutes
-				 * add the correct 5-minute-chunk code depending on how many chunks are already present
+				/* special handling for all tarmed 5-minute-chunks with first-middle-last 5 minutes.
+				 * Add the correct 5-minute-chunk code depending on how many chunks are already present
 				 * and depending on the current age of the patient.
-				 * limit to maximum chunks defined in tarmed.
+				 * Limit to maximum chunks defined in tarmed.
 				 * if adding over 4 chunks for standard age patients: ask user once if this is ok
 				*/
 				int codeMapIx = -1;
@@ -503,38 +537,27 @@ public class TarmedOptifier implements IOptifier {
 							}
 						}
 						
-						// *** count max number of 5-minutes-chunks for konsdate, age, law
-						// tcid
-						// isKonsAfter2018
-						for (String s : codeMap) {
-							IVerrechenbar childrensVerrechenbar =
-								TarmedLeistung.getFromCode(s, date, law);
-							TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
-							int mpm = getMaxPerMaster(tc2);
-							List<TarmedLimitation> limitations = tc2.getLimitations();
-							int limitation = limitations.get(0).getAmount();
-						}
-						
 						// ***  test if current kons is for < 6 years or > 75 years
-						boolean isChildOrOlder = false; // *** default (NOT KVG) or old version/UVG-Version
-						try {
-							if (law.equalsIgnoreCase("KVG")) {
-								IVerrechenbar childrensVerrechenbar =
-									TarmedLeistung.getFromCode(codeMap[3], date, law);
-								TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
-								Hashtable<String, String> extChildren = tc2.loadExtension();
-								String ageLimits =
-									extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
-								isChildOrOlder = true;
-								if (ageLimits != null && !ageLimits.isEmpty()) {
-									String errorMessage = checkAge(ageLimits, kons);
-									if (errorMessage != null)
-										isChildOrOlder = false;
-								}
-							}
-						} catch (Exception ex) {
-							// *** no children's code defined -> isChildOrOlder = false
-						}
+						boolean isChildOrOlder = isNormalAgeForCode(kons, codeMap[3]);
+						//						boolean isChildOrOlder = false; // *** default (NOT KVG) or old version/UVG-Version
+						//						try {
+						//							if (law.equalsIgnoreCase("KVG")) {
+						//								IVerrechenbar childrensVerrechenbar =
+						//									TarmedLeistung.getFromCode(codeMap[3], date, law);
+						//								TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
+						//								Hashtable<String, String> extChildren = tc2.loadExtension();
+						//								String ageLimits =
+						//									extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
+						//								isChildOrOlder = true;
+						//								if (ageLimits != null && !ageLimits.isEmpty()) {
+						//									String errorMessage = checkAge(ageLimits, kons);
+						//									if (errorMessage != null)
+						//										isChildOrOlder = false;
+						//								}
+						//							}
+						//						} catch (Exception ex) {
+						//							// *** no children's code defined -> isChildOrOlder = false
+						//						}
 						
 						// *** add 5-minute-chunks depending on numberOfFiveMinuteChunks, age, tarmed version, etc
 						String newCode = tcid;
