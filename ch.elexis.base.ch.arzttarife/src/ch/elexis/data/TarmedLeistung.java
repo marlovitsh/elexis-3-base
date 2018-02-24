@@ -36,6 +36,7 @@ import ch.elexis.core.ui.data.UiVerrechenbarAdapter;
 import ch.elexis.data.TarmedKumulation.TarmedKumulationType;
 import ch.elexis.data.TarmedLimitation.LimitationUnit;
 import ch.elexis.views.TarmedDetailDialog;
+import ch.elexis.views.TarmedOptifierLists;
 import ch.rgw.tools.IFilter;
 import ch.rgw.tools.JdbcLink;
 import ch.rgw.tools.JdbcLink.Stm;
@@ -242,8 +243,8 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 		String spacer = " ";
 		if (TarmedOptifier.doStripMinuteItemsFromTree) {
 			spacer = "  ";
-			for (int j = 0; j < TarmedOptifier.codeMapListArrays.length; j++) {
-				String[][] codeMap = TarmedOptifier.codeMapListArrays[j];
+			for (int j = 0; j < TarmedOptifierLists.codeMapListArrays.length; j++) {
+				String[][] codeMap = (String[][]) TarmedOptifierLists.codeMapListArrays[j];
 				for (int i = 0; i < codeMap.length; i++) {
 					String code = vals[0];
 					String[] part = codeMap[i];
@@ -257,9 +258,10 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 				}
 			}
 			// *** replace +++++
-			for (int ii = 0; ii < TarmedOptifier.yearReplacements.length; ii++)
-				vals[1] = vals[1].replace((CharSequence) TarmedOptifier.yearReplacements[ii][0],
-					(CharSequence) TarmedOptifier.yearReplacements[ii][1]);
+			for (int ii = 0; ii < TarmedOptifierLists.yearReplacements.length; ii++)
+				vals[1] =
+					vals[1].replace((CharSequence) TarmedOptifierLists.yearReplacements[ii][0],
+						(CharSequence) TarmedOptifierLists.yearReplacements[ii][1]);
 		}
 		return vals[0] + spacer + vals[1]
 			+ ((vals[2] != null && !vals[2].isEmpty()) ? " (" + vals[2] + ")" : "");

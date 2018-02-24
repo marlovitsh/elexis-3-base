@@ -186,13 +186,14 @@ public class TarmedCodeSelectorContentProvider
 				childrenQuery.clear();
 				childrenQuery.add(TarmedLeistung.FLD_PARENT, Query.EQUALS, parentLeistung.getId());
 				// +++++ START minutes
-				Konsultation kons = (Konsultation) ElexisEventDispatcher.getSelected(Konsultation.class);
+				Konsultation kons =
+					(Konsultation) ElexisEventDispatcher.getSelected(Konsultation.class);
 				boolean isAfter2018 = new TimeTool(kons.getDatum()).get(Calendar.YEAR) >= 2018;
 				if (TarmedOptifier.doStripMinuteItemsFromTree && isAfter2018) {
 					// 00.0010, 00.0020, 00.0025, 00.0030 -> "einfach Konsultation, 5 Min"
 					// +++++ ACHTUNG: SQL
-					for (int j = 0; j < TarmedOptifier.codeMapListArrays.length; j++) {
-						String[][] codeMap = TarmedOptifier.codeMapListArrays[j];
+					for (int j = 0; j < TarmedOptifierLists.codeMapListArrays.length; j++) {
+						String[][] codeMap = (String[][]) TarmedOptifierLists.codeMapListArrays[j];
 						for (int i = 0; i < codeMap.length; i++) {
 							String[] part = codeMap[i];
 							String joined = ",XXX" + StringTool.join(part, ",") + ",";
