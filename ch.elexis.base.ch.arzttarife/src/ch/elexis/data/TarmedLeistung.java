@@ -259,9 +259,9 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 			}
 			// *** replace +++++
 			for (int ii = 0; ii < TarmedOptifierLists.itemReplacements5MinuteCodes.length; ii++)
-				vals[1] =
-					vals[1].replace((CharSequence) TarmedOptifierLists.itemReplacements5MinuteCodes[ii][0],
-						(CharSequence) TarmedOptifierLists.itemReplacements5MinuteCodes[ii][1]);
+				vals[1] = vals[1].replace(
+					(CharSequence) TarmedOptifierLists.itemReplacements5MinuteCodes[ii][0],
+					(CharSequence) TarmedOptifierLists.itemReplacements5MinuteCodes[ii][1]);
 		}
 		return vals[0] + spacer + vals[1]
 			+ ((vals[2] != null && !vals[2].isEmpty()) ? " (" + vals[2] + ")" : "");
@@ -526,10 +526,11 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 	}
 	
 	/**
-	 * Get the AL value of the {@link TarmedLeistung}.
+	 * Get the AL value of the {@link TarmedLeistung}.<br>
+	 * <b>IMPORTANT:</b> No scaling according to the Dignität of the {@link Mandant} is performed.
+	 * Use {@link TarmedLeistung#getAL(Mandant)} for AL value with scaling included.
 	 * 
 	 * @return
-	 * @deprecated always use the method with {@link Mandant} parameter for correct billing
 	 */
 	public int getAL(){
 		Hashtable<String, String> map = loadExtension();
@@ -547,6 +548,18 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 	 */
 	public int getAL(Mandant mandant){
 		Hashtable<String, String> map = loadExtension();
+		return (int) Math.round(checkZeroDouble(map.get(EXT_FLD_TP_AL)) * getALScaling(mandant)); //$NON-NLS-1$
+	}
+	
+	/**
+	 * Get the AL scaling value to be used when billing this {@link TarmedLeistung} for the provided
+	 * {@link Mandant}.
+	 * 
+	 * @param mandant
+	 * @return
+	 */
+	public double getALScaling(Mandant mandant){
+		Hashtable<String, String> map = loadExtension();
 		double scaling = 100;
 		if (mandant != null) {
 			MandantType type = getMandantType(mandant);
@@ -557,7 +570,7 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 				}
 			}
 		}
-		return (int) Math.round(checkZeroDouble(map.get(EXT_FLD_TP_AL)) * scaling); //$NON-NLS-1$
+		return scaling;
 	}
 	
 	/**
