@@ -207,31 +207,6 @@ public class TarmedOptifier implements IOptifier {
 		}
 		return bIsNormalAge;
 	}
-	
-	public boolean isisis(Konsultation kons, String code){
-		TimeTool date = new TimeTool(kons.getDatum());
-		String law = kons.getFall().getRequiredString("Gesetz");
-		
-		boolean isChildOrOlder = false; // *** default (NOT KVG) or old version/UVG-Version
-		try {
-			if (law.equalsIgnoreCase("KVG")) {
-				IVerrechenbar childrensVerrechenbar =
-					TarmedLeistung.getFromCode(code /*codeMap[3]*/, date, law);
-				TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
-				Hashtable<String, String> extChildren = tc2.loadExtension();
-				String ageLimits = extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
-				isChildOrOlder = true;
-				if (ageLimits != null && !ageLimits.isEmpty()) {
-					String errorMessage = checkAge(ageLimits, kons);
-					if (errorMessage != null)
-						isChildOrOlder = false;
-				}
-			}
-		} catch (Exception ex) {
-			// *** no children's code defined -> isChildOrOlder = false
-		}
-		return isChildOrOlder;
-	}
 	// +++++ END minutes
 	
 	/**
@@ -251,14 +226,19 @@ public class TarmedOptifier implements IOptifier {
 		
 		bOptify = CoreHub.userCfg.get(Preferences.LEISTUNGSCODES_OPTIFY, true);
 		
-		//bOptify = false;
-		
 		TarmedLeistung tc = (TarmedLeistung) code;
 		
-		// +++++ START automatic addition of needed parent codes
-		boolean isKonsAfter2018 = new TimeTool(kons.getDatum()).get(Calendar.YEAR) >= 2018;
+		// +++++ START
 		String tcid = code.getCode();
 		
+		// *********************************************************************
+		// *** make titles not selectable
+		if (!tcid.matches("[0-9][0-9].[0-9][0-9][0-9][0-9]"))
+			return new Result<IVerrechenbar>(null);
+		
+		boolean isKonsAfter2018 = new TimeTool(kons.getDatum()).get(Calendar.YEAR) >= 2018;
+		
+		// *********************************************************************
 		// *** handle connected tarmeds
 		if (bOptify && doOptifyConnectedTarmeds) {
 			if (!isAddingConnected) {
@@ -283,39 +263,36 @@ public class TarmedOptifier implements IOptifier {
 			}
 		}
 		
-		// +++++ START minutes
-		doOptify5MinuteChunks = true;
-		// +++++ END minutes
+		// *********************************************************************
+		// *** automatic addition of needed parent codes
 		
-		// +++++ START automatic addition of needed parent codes
-		// *** must add before getting lst (see below)
-		if (bOptify) {
-			boolean isKonsultationType = false;
-			for (String[] sa : TarmedOptifierLists.fiveMinuteChunkCodeMaps) {
-				for (String s : sa)
-					if (s.equalsIgnoreCase(tcid)) {
-						isKonsultationType = true;
-						break;
-					}
-				if (isKonsultationType)
-					break;
-			}
-			if (!isKonsultationType) {
-				TarmedLeistung[] matchingParents =
-					getMatchingTarmedParents(tc, new TimeTool(kons.getDatum()));
-				if (matchingParents.length > 0) {
-					Result<IVerrechenbar> addResult =
-						kons.addLeistung(getKonsVerrechenbar(matchingParents[0].getCode(), kons));
-				}
-			}
-		}
-		// +++++ END automatic addition of needed parent codes
+		//		// *** must add before getting lst (see below)
+		//		if (bOptify) {
+		//			boolean isKonsultationType = false;
+		//			for (String[] sa : TarmedOptifierLists.fiveMinuteChunkCodeMaps) {
+		//				for (String s : sa)
+		//					if (s.equalsIgnoreCase(tcid)) {
+		//						isKonsultationType = true;
+		//						break;
+		//					}
+		//				if (isKonsultationType)
+		//					break;
+		//			}
+		//			if (!isKonsultationType) {
+		//				TarmedLeistung[] matchingParents =
+		//					getMatchingTarmedParents(tc, new TimeTool(kons.getDatum()));
+		//				if (matchingParents.length > 0) {
+		//					Result<IVerrechenbar> addResult =
+		//						kons.addLeistung(getKonsVerrechenbar(matchingParents[0].getCode(), kons));
+		//				}
+		//			}
+		//		}
 		
 		List<Verrechnet> lst = kons.getLeistungen();
 		
-		// +++++ START
 		// *********************************************************************
 		// *** age group "redirects" - change to correct age group, uses TarmedOptifierLists.ageGroupLists
+		doOptify5MinuteChunks = true;
 		if (doOptify5MinuteChunks && isKonsAfter2018) {
 			TimeTool date = new TimeTool(kons.getDatum());
 			String law = kons.getFall().getRequiredString("Gesetz");
@@ -422,88 +399,9 @@ public class TarmedOptifier implements IOptifier {
 				}
 			}
 		}
-		// +++++ END
 		
-		/*
-		 * TODO Hier checken, ob dieser code mit der Dignität und
-		 * Fachspezialisierung des aktuellen Mandanten usw. vereinbar ist
-		 */
-		
-		Hashtable<String, String> ext = tc.loadExtension();
-		// Gültigkeit gemäss Datum und Alter prüfen
-		if (bOptify) {
-			TimeTool date = new TimeTool(kons.getDatum());
-			String dVon = ((TarmedLeistung) code).get("GueltigVon"); //$NON-NLS-1$
-			if (!StringTool.isNothing(dVon)) {
-				TimeTool tVon = new TimeTool(dVon);
-				if (date.isBefore(tVon)) {
-					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, NOTYETVALID,
-						code.getCode() + Messages.TarmedOptifier_NotYetValid, null, false);
-				}
-			}
-			String dBis = ((TarmedLeistung) code).get("GueltigBis"); //$NON-NLS-1$
-			if (!StringTool.isNothing(dBis)) {
-				TimeTool tBis = new TimeTool(dBis);
-				if (date.isAfter(tBis)) {
-					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, NOMOREVALID,
-						code.getCode() + Messages.TarmedOptifier_NoMoreValid, null, false);
-				}
-			}
-			String ageLimits = ext.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
-			if (ageLimits != null && !ageLimits.isEmpty()) {
-				String errorMessage = checkAge(ageLimits, kons);
-				if (errorMessage != null) {
-					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, PATIENTAGE,
-						errorMessage, null, false);
-				}
-			}
-		}
-		newVerrechnet = null;
-		newVerrechnetSide = null;
-		// Korrekter Fall Typ prüfen, und ggf. den code ändern
-		if (tc.getCode().matches("39.002[01]") || tc.getCode().matches("39.001[0156]")) {
-			String gesetz = kons.getFall().getRequiredString("Gesetz");
-			if (gesetz == null || gesetz.isEmpty()) {
-				gesetz = kons.getFall().getAbrechnungsSystem();
-			}
-			
-			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0011")) {
-				return this.add(getKonsVerrechenbar("39.0010", kons), kons);
-			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0010")) {
-				return this.add(getKonsVerrechenbar("39.0011", kons), kons);
-			}
-			
-			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0016")) {
-				return this.add(getKonsVerrechenbar("39.0015", kons), kons);
-			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0015")) {
-				return this.add(getKonsVerrechenbar("39.0016", kons), kons);
-			}
-			
-			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0021")) {
-				return this.add(getKonsVerrechenbar("39.0020", kons), kons);
-			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0020")) {
-				return this.add(getKonsVerrechenbar("39.0021", kons), kons);
-			}
-		}
-		
-		if (tc.getCode().matches("35.0020")) {
-			List<Verrechnet> opCodes = getOPList(lst);
-			List<Verrechnet> opReduction = getVerrechnetMatchingCode(lst, "35.0020");
-			// updated reductions to codes, and get not yet reduced codes
-			List<Verrechnet> availableCodes = updateOPReductions(opCodes, opReduction);
-			if (availableCodes.isEmpty()) {
-				return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, KOMBINATION,
-					code.getCode(), null, false);
-			}
-			for (Verrechnet verrechnet : availableCodes) {
-				newVerrechnet = new Verrechnet(tc, kons, 1);
-				mapOpReduction(verrechnet, newVerrechnet);
-			}
-			return new Result<IVerrechenbar>(null);
-		}
-		
-		// +++++ START minutes
-		// if (doOptify5MinuteChunks && isAfter2018) {
+		// *********************************************************************
+		// *** handle 5-minute-chunks
 		if (doOptify5MinuteChunks) {
 			String law = kons.getFall().getRequiredString("Gesetz");
 			TimeTool date = new TimeTool(kons.getDatum());
@@ -539,25 +437,6 @@ public class TarmedOptifier implements IOptifier {
 						
 						// ***  test if current kons is for < 6 years or > 75 years
 						boolean isChildOrOlder = isNormalAgeForCode(kons, codeMap[3]);
-						//						boolean isChildOrOlder = false; // *** default (NOT KVG) or old version/UVG-Version
-						//						try {
-						//							if (law.equalsIgnoreCase("KVG")) {
-						//								IVerrechenbar childrensVerrechenbar =
-						//									TarmedLeistung.getFromCode(codeMap[3], date, law);
-						//								TarmedLeistung tc2 = (TarmedLeistung) childrensVerrechenbar;
-						//								Hashtable<String, String> extChildren = tc2.loadExtension();
-						//								String ageLimits =
-						//									extChildren.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
-						//								isChildOrOlder = true;
-						//								if (ageLimits != null && !ageLimits.isEmpty()) {
-						//									String errorMessage = checkAge(ageLimits, kons);
-						//									if (errorMessage != null)
-						//										isChildOrOlder = false;
-						//								}
-						//							}
-						//						} catch (Exception ex) {
-						//							// *** no children's code defined -> isChildOrOlder = false
-						//						}
 						
 						// *** add 5-minute-chunks depending on numberOfFiveMinuteChunks, age, tarmed version, etc
 						String newCode = tcid;
@@ -642,19 +521,96 @@ public class TarmedOptifier implements IOptifier {
 						if (!tcid.equals(newCode)) {
 							IVerrechenbar toBeAdded =
 								TarmedLeistung.getFromCode(newCode, date, law);
-							
 							code = toBeAdded;
 							tc = (TarmedLeistung) toBeAdded;
 							tcid = code.getCode();
-							
-							//++++++++return kons.addLeistung(toBeAdded);
 						}
 						break;
 					}
 				}
 			}
 		}
-		// +++++ END minutes
+		// +++++ END
+		
+		/*
+		 * TODO Hier checken, ob dieser code mit der Dignität und
+		 * Fachspezialisierung des aktuellen Mandanten usw. vereinbar ist
+		 */
+		
+		Hashtable<String, String> ext = tc.loadExtension();
+		// Gültigkeit gemäss Datum und Alter prüfen
+		if (bOptify) {
+			TimeTool date = new TimeTool(kons.getDatum());
+			String dVon = ((TarmedLeistung) code).get("GueltigVon"); //$NON-NLS-1$
+			if (!StringTool.isNothing(dVon)) {
+				TimeTool tVon = new TimeTool(dVon);
+				if (date.isBefore(tVon)) {
+					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, NOTYETVALID,
+						code.getCode() + Messages.TarmedOptifier_NotYetValid, null, false);
+				}
+			}
+			String dBis = ((TarmedLeistung) code).get("GueltigBis"); //$NON-NLS-1$
+			if (!StringTool.isNothing(dBis)) {
+				TimeTool tBis = new TimeTool(dBis);
+				if (date.isAfter(tBis)) {
+					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, NOMOREVALID,
+						code.getCode() + Messages.TarmedOptifier_NoMoreValid, null, false);
+				}
+			}
+			String ageLimits = ext.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
+			if (ageLimits != null && !ageLimits.isEmpty()) {
+				String errorMessage = checkAge(ageLimits, kons);
+				if (errorMessage != null) {
+					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, PATIENTAGE,
+						errorMessage, null, false);
+				}
+			}
+		}
+		newVerrechnet = null;
+		newVerrechnetSide = null;
+		// Korrekter Fall Typ prüfen, und ggf. den code ändern
+		if (tc.getCode().matches("39.002[01]") || tc.getCode().matches("39.001[0156]")) {
+			String gesetz = kons.getFall().getRequiredString("Gesetz");
+			if (gesetz == null || gesetz.isEmpty()) {
+				gesetz = kons.getFall().getAbrechnungsSystem();
+			}
+			
+			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0011")) {
+				return this.add(getKonsVerrechenbar("39.0010", kons), kons);
+			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0010")) {
+				return this.add(getKonsVerrechenbar("39.0011", kons), kons);
+			}
+			
+			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0016")) {
+				return this.add(getKonsVerrechenbar("39.0015", kons), kons);
+			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0015")) {
+				return this.add(getKonsVerrechenbar("39.0016", kons), kons);
+			}
+			
+			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0021")) {
+				return this.add(getKonsVerrechenbar("39.0020", kons), kons);
+			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0020")) {
+				return this.add(getKonsVerrechenbar("39.0021", kons), kons);
+			}
+		}
+		
+		if (tc.getCode().matches("35.0020")) {
+			List<Verrechnet> opCodes = getOPList(lst);
+			List<Verrechnet> opReduction = getVerrechnetMatchingCode(lst, "35.0020");
+			// updated reductions to codes, and get not yet reduced codes
+			List<Verrechnet> availableCodes = updateOPReductions(opCodes, opReduction);
+			if (availableCodes.isEmpty()) {
+				return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, KOMBINATION,
+					code.getCode(), null, false);
+			}
+			for (Verrechnet verrechnet : availableCodes) {
+				newVerrechnet = new Verrechnet(tc, kons, 1);
+				mapOpReduction(verrechnet, newVerrechnet);
+			}
+			return new Result<IVerrechenbar>(null);
+		}
+		
+		// ++++++++++++++++++ WAS HERE
 		
 		// Ist der Hinzuzufügende Code vielleicht schon in der Liste? Dann
 		// nur Zahl erhöhen.
@@ -774,10 +730,6 @@ public class TarmedOptifier implements IOptifier {
 			return limitResult;
 		}
 		
-		// +++++ START minutes: moved above
-		// String tcid = code.getCode();
-		// +++++ END minutes
-		
 		// check if it's an X-RAY service and add default tax if so
 		// default xray tax will only be added once (see above)
 		if (!tc.getCode().equals(DEFAULT_TAX_XRAY_ROOM) && !tc.getCode().matches("39.002[01]")
@@ -809,24 +761,52 @@ public class TarmedOptifier implements IOptifier {
 			newVerrechnet.setDetail(TL, Double.toString(sumTL));
 		}
 		
-		// Zuschlag Kinder
-		else if (tcid.equals("00.0010") || tcid.equals("00.0060")) {
+		// *** Zuschlag Kinder - better
+		else if (TarmedOptifierLists.childrensAdditionsArray.contains(tcid)) {
 			if (CoreHub.mandantCfg != null
 				&& CoreHub.mandantCfg.get(RechnungsPrefs.PREF_ADDCHILDREN, false)) {
 				Fall f = kons.getFall();
 				if (f != null) {
 					Patient p = f.getPatient();
 					if (p != null) {
-						String alter = p.getAlter();
-						if (Integer.parseInt(alter) < 6) {
-							TarmedLeistung tl =
-								(TarmedLeistung) getKonsVerrechenbar("00.0040", kons);
-							add(tl, kons);
+						for (String[] sa : TarmedOptifierLists.childrensAdditions) {
+							if (sa[0].equalsIgnoreCase(tcid)) {
+								for (int i = 1; i < sa.length; i++) {
+									String childrenAddition = sa[i];
+									boolean isInRange = isNormalAgeForCode(kons, childrenAddition);
+									if (isInRange) {
+										TarmedLeistung tl =
+											(TarmedLeistung) getKonsVerrechenbar(childrenAddition,
+												kons);
+										add(tl, kons);
+									}
+								}
+								break;
+							}
 						}
 					}
 				}
 			}
 		}
+		
+		//		// Zuschlag Kinder
+		//		else if (tcid.equals("00.0010") || tcid.equals("00.0060")) {
+		//			if (CoreHub.mandantCfg != null
+		//				&& CoreHub.mandantCfg.get(RechnungsPrefs.PREF_ADDCHILDREN, false)) {
+		//				Fall f = kons.getFall();
+		//				if (f != null) {
+		//					Patient p = f.getPatient();
+		//					if (p != null) {
+		//						String alter = p.getAlter();
+		//						if (Integer.parseInt(alter) < 6) {
+		//							TarmedLeistung tl =
+		//								(TarmedLeistung) getKonsVerrechenbar("00.0040", kons);
+		//							add(tl, kons);
+		//						}
+		//					}
+		//				}
+		//			}
+		//		}
 		
 		// Zuschläge für Insellappen 50% auf AL und TL bei 1910,20,40,50
 		else if (tcid.equals("04.1930")) { //$NON-NLS-1$

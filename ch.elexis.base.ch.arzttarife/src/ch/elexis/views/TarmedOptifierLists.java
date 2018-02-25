@@ -71,179 +71,241 @@ public class TarmedOptifierLists {
 	};
 	
 	// ***********************************************
-	public final static Object[][] childrensAdditions = {
+	/**
+	 * Defines automatic children's additions dependent on age of the patient at the date of the
+	 * konsultation.<br>
+	 * Definition:
+	 * <ul>
+	 * <li>first item: Base Tarmed</li>
+	 * <li>following items: children's addition</li>
+	 * </ul>
+	 */
+	public final static String[][] childrensAdditions = {
 		{
-			"00.0010", "00.0040", 6
+			// *** Konsultation, erste 5 Min.
+			"00.0010", "00.0040"
 		}, {
-			"00.0060", "00.0040", 6
+			// *** Härtende Verbände (Zirkulärverbände/Schienen), Kategorie I
+			// *** + Zuschlag bei härtenden Verbänden beim Kind bis 7 Jahre"
+			"01.0210", "01.0250"
 		}, {
-			"00.0060", "00.0040", 6
+			// *** 08.0650 "Tränenwegsondierung, einseitig";
+			// *** 08.0660 "+ Zuschlag beim Kind bis 7 Jahre bei Tränenwegsondierung";
+			"08.0650", "08.0660"
+		}, {
+			// *** 08.2150 "Fremdkörperentfernung aus Kornea und Sklera, tiefe Lage, mit Entfernung des Rosthofes, erster Fremdkörper";
+			// *** 08.2170 "+ Zuschlag für Fremdkörperentfernung(en) aus Kornea und Sklera beim Kind bis 7 Jahre";
+			"08.2150", "08.2170"
+		}, {
+			// *** 08.2760" Extractio lentis/Phakoemulsifikation, inkl. Implantation einer künstlichen Linse und Einsetzen eines Kapselspannringes";
+			// *** 08.2830" + Zuschlag beim Kind bis 7 Jahre bei Extractio lentis/Phakoemulsifikation";
+			"08.2760", "08.2830"
+		}, {
+			// *** 09.0310 "Reintonaudiogramm, Luftleitung, pro Seite";
+			// *** 09.0320 "+ Zuschlag beim Kind bis 7 Jahre bei Reintonaudiogramm, Luftleitung, pro Seite";
+			"09.0310", "09.0320"
+		}, {
+			// *** 09.0340 "Reintonaudiogramm, Luftleitung und Knochenleitung, beidseitig";
+			// *** 09.0350 "+ Zuschlag beim Kind bis 7 Jahre bei Reintonaudiogramm, Luftleitung und Knochenleitung, beidseitig";
+			"09.0340", "09.0350"
+		}, {
+			// *** 09.0560 "Registrierung otoakustischer Emissionen, beidseitig";
+			// *** 09.0570 "+ Zuschlag beim Kind bis 7 Jahre bei Registrierung otoakustischer Emissionen, beidseitig";
+			"09.0560", "09.0570"
+		}, {
+			// *** 09.0930 "Erschwerte Gehörgangsreinigung mittels Mikroskop, pro Seite";
+			// *** 09.0940 "+ Zuschlag beim Kind bis 7 Jahre bei erschwerter Gehörgangsreinigung mittels Mikroskop, pro Seite";
+			"09.0930", "09.0940"
+		}, {
+			// *** 10.0630 "Endonasale Fremdkörperextraktion aus dem mittleren/hinteren Drittel der Nasenhöhle";
+			// *** 10.0640 "+ Zuschlag beim Kind bis 7 Jahre bei endonasaler Fremdkörperextraktion";
+			"10.0630", "10.0640"
+		}, {
+			// *** 15.0130 "Kleine Spirometrie mit Dokumentation der Flussvolumenkurve"
+			// *** 15.0140 "+ Zuschlag beim Kind bis 7 Jahre bei Spirometrie mit Dokumentation der Flussvolumenkurve";
+			"15.0130", "15.0140"
+		}, {
+			// *** 15.0160 "Vollständige Spirometrie und Resistance (Plethysmografie)";
+			// *** 15.0170 "+ Zuschlag beim Kind/Jugendlichen bis 16 Jahre bei vollständiger Spirometrie und Resistance (Plethysmografie)";
+			"15.0160", "15.0170"
+		}, {
+			// *** 15.0410 "Bronchoskopie, starr, diagnostisch und therapeutisch";
+			// *** 15.0430 "+ Zuschlag beim Kind bis 7 Jahre bei starrer/flexibler Bronchoskopie";
+			"15.0410", "15.0430"
+		}, {
+			// *** 17.0010 "Elektrokardiogramm ({EKG})";
+			// *** 17.0040 "+ Zuschlag beim Kind bis 7 Jahre bei Elektrokardiogramm ({EKG})";
+			"17.0010", "17.0040"
+		}, {
+			// *** 19.0060 "Legen einer Magensonde durch den Facharzt";
+			// *** 19.0070 "+ Zuschlag beim Kind bis 7 Jahre beim Legen einer Magensonde durch den Facharzt";
+			"19.0060", "19.0070"
+		}, {
+			// *** 19.1750 "Digitale Ausräumung des Rektums durch den Facharzt beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen";
+			// *** 19.1760 "Digitale Ausräumung des Rektums durch den Facharzt beim Kind bis 7 Jahre";
+			"19.1750", "19.1760"
+		}, {
+			// *** 17.0710 "Kardangiografie, Grundleistung I";
+			// *** 17.0720 "+ Zuschlag zur Grundleistung I beim Kind bis 7 Jahre";
+			// *** 17.0730 "+ Zuschlag zur Grundleistung I beim Kind/Jugendlichen ab 7 bis 16 Jahre";
+			"17.0710", "17.0720", "17.0730"
 		},
-			// +++++ much more of these
+	};
+	
+	public final static String[][] ageConnections = {
+		{
+			// *** 00.0730 "Punktion in Reservoirsystem (intravenös, intraarteriell, Liquor) durch den Facharzt";
+			// *** 00.0740 "Punktion u/o Injektion in Reservoirsystem (Liquor) durch den Facharzt beim Kind/Jugendlichen bis 16 Jahre";
+			// *** use equal although not exactly defined the same way litterally
+			"00.0730", "00.0740"
+		}, {
+			// *** 00.0760 "Injektion, intrakutan/intramukös, durch den Facharzt (Bestandteil von 'Allgemeine Grundleistungen')";
+			// *** 00.0770 "+ Injektion, intrakutan/intramukös, durch den Facharzt, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')"; FALSCH ALS SUBITEM!!! 
+			"00.0760", "00.0770"
+		}, {
+			// *** 00.0800 "Injektion, intravenös (Bestandteil von 'Allgemeine Grundleistungen')";
+			// *** 00.0810 "+ Injektion, intravenös, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')"; FALSCH ALS SUBITEM!!!
+			"00.0800", "00.0810"
+		}, {
+			// *** 00.0890 "Gefässzugang, Venaesectio durch den Facharzt beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen"
+			// *** 00.0900 "Gefässzugang, Venaesectio durch den Facharzt beim Kind bis 7 Jahre" (7 Jahre (+30 Tage))
+			// *** 00.0910 "Gefässzugang, Venaesectio durch den Facharzt bei Frühgeborenen und Neugeborenen" (<= 1 Monat (+ 7 Tage) )
+			"00.0890", "00.0900", "00.0910"
+		}, {
+			// *** 00.0980 "Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze"
+			// *** 00.0990 "+ Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre" FALSCH ALS SUBITEM!!!
+			"00.0980", "00.0990"
+		}, {
+			// *** 00.0995 "Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze";
+			// *** 00.0996 "+ Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
+			"00.0995", "00.0996"
+		}, {
+			// *** 09.0120 "Untersuchung mit Ohrmikroskop, pro Seite";
+			// *** 09.0130 "+ Untersuchung mit Ohrmikroskop beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
+			"09.0120", "09.0130"
+		}, {
+			// *** 09.1105 "Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als alleinige Leistung";
+			// *** 09.1110 "Parazentese des Trommelfelles beim Kind/Jugendlichen bis 16 Jahre, pro Seite, als alleinige Leistung";
+			"09.1105", "09.1110"
+		}, {
+			// *** 09.1106 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Erwachsenen älter als 16 Jahre, pro Seite";
+			// *** 09.1120 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Kind/Jugendlichen bis 16 Jahre , pro Seite";
+			"09.1106", "09.1120"
+		}, {
+			// *** 09.1107 "+ Einlage eines Röhrchens bei Parazentese des Trommelfells beim Erwachsenen älter als 16 Jahre, pro Seite";
+			// *** 09.1130 "+ Einlage eines Röhrchens bei Parazentese des Trommelfells beim Kind/Jugendlichen bis 16 Jahre , pro Seite";
+			"09.1107", "09.1130"
+		}, {
+			// *** 17.0230 "Echokardiografie, transthorakal, Kontrolluntersuchung";
+			// *** 17.0240 "Echokardiografie, transthorakal, beim Kind bis 3 Jahre";
+			// *** 17.0250 "Echokardiografie, transthorakal, beim Kind/Jugendlichen ab 3 bis 16 Jahre";
+			"17.0230", "17.0240", "17.0250"
+		}, {
+			// *** 17.0260 "Echokardiografie, transoesophageal";
+			// *** 17.0270 "+ Echokardiografie, transoesophageal beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
+			"17.0260", "17.0270"
+		}, {
+			// *** 20.1350 "Entfernung retroperitonealer Tumoren, beim Kind bis 7 Jahre, als alleinige Leistung exkl. Zugang";"20.2840"
+			// *** 20.2840 "Entfernung retroperitonealer Tumoren, beim Kind/Jugendlichen und Erwachsenen älter als 7 Jahre, als alleinige Leistung exkl. Zugang";
+			"20.1350", "20.2840"
+		}, {
+		// *** 20.2850 "Entfernung retroperitonealer Tumoren, beim Kind/Jugendlichen und Erwachsenen älter als 7 Jahre, als alleinige Leistung exkl. Zugang";
+		// *** 20.2840 "Entfernung retroperitonealer Tumoren, beim Kind bis 7 Jahre, als alleinige Leistung exkl. Zugang";
+		}, {
+			// *** 21.3130 "Operative Versorgung bei Kryptorchismus beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen, einseitig";
+			// *** 21.3135 "Operative Versorgung bei Kryptorchismus, beim Kind bis 7 Jahre, einseitig";
+			"21.3130", "21.3135"
+		}, {
+			// *** 21.3140 "Operative Versorgung bei Kryptorchismus beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen, beidseitig";
+			"21.3140", "21.3145"
+		},
+			
+			// ", beim Kind bis 7 Jahre"
+			// " beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen"
+			// " beim Kind bis 7 Jahre" (7 Jahre (+30 Tage))"
+			// " bei Frühgeborenen und Neugeborenen" (<= 1 Monat (+ 7 Tage) )"
+			// +++++ noch vervollständigen
 	};
 	/* Entweder oder:
-	00.0730 "Punktion in Reservoirsystem (intravenös, intraarteriell, Liquor) durch den Facharzt";
-	00.0740 "Punktion u/o Injektion in Reservoirsystem (Liquor) durch den Facharzt beim Kind/Jugendlichen bis 16 Jahre";
+		
+		Kapitel 03 +++++ not yet implemented
+		Kapitel 05 +++++ not yet implemented
+		
+		????:
+		09.1140 "(+) Parazentese des Trommelfelles beim Kind/Jugendlichen bis 16 Jahre, pro Seite, als Zuschlagsleistung";
+		09.1145 "(+) Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als Zuschlagsleistung";
+		
+		AUCH NOCH GESCHLECHT:
+		20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
+		20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
+		20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
+		20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
+		20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+		20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+		20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+		20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+		20.0330 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, einseitig";
+		20.0340 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, beidseitig";
+		20.0350 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
+		20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+		
+		20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
+		20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
+		20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+		20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+		20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+		20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+		20.0460 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, einseitig";
+		20.0470 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, beidseitig";
+		20.0480 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
+		20.0490 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+		
+		AUCH NOCH GESCHLECHT:
+		21.0010 "Blasenkatheterismus, diagnostisch und therapeutisch beim Knaben/Mann älter als 16 Jahre, durch den Facharzt";
+		21.0020 "Blasenkatheterismus, diagnostisch und therapeutisch beim Mädchen/bei der Frau älter als 16 Jahre, durch den Facharzt";
+		21.0030 "Blasenkatheterismus, diagnostisch und therapeutisch beim Kind/Jugendlichen bis 16 Jahre, durch den Facharzt";
+		
+		AUCH NOCH GESCHLECHT:
+		21.0110 "Urethroskopie, urethraler Zugang beim Knaben/Mann älter als 16 Jahre";
+		21.0120 "+ Zuschlag für perinealen Zugang bei Urethroskopie";
+		21.0130 "+ Biopsie bei Urethroskopie";
+		21.0140 "+ Fulguration/Abtragung einer Läsion bei Urethroskopie, unabhängig der Anzahl";
+		21.0150	"+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Urethroskopie, unabhängig der Anzahl";
+		21.0160 "Urethroskopie, urethraler Zugang beim Mädchen/bei der Frau älter als 16 Jahre";
+		21.0170 "+ Zuschlag für perinealen Zugang bei Urethroskopie";
+		21.0180 "+ Biopsie bei Urethroskopie";
+		21.0190 "+ Fulguration/Abtragung einer Läsion bei Urethroskopie, unabhängig der Anzahl";
+		21.0200 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Urethroskopie, unabhängig der Anzahl";
+		21.0210 "Urethroskopie, urethraler Zugang beim Kind/Jugendlichen bis 16 Jahre";
+		21.0220 "+ Resektion posteriore Urethralklappen beim Kind/Jugendlichen bis 16 Jahre";
+		
+		///////////////
+		21.0310 "Zystoskopie/Urethrozystoskopie beim Knaben/Mann älter als 16 Jahre";
+		21.0320 "+ Diagnostische Endoskopie bei Zystoskopie/Urethrozystoskopie";
+		21.0330 "+ Biopsie(n) bei Zystoskopie/Urethrozystoskopie";
+		21.0340 "+ Fulguration/Abtragung einer Läsion bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
+		21.0350 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
+		21.0360 "+ Lithotripsie, inkl. Trümmerentfernung, bei Zystoskopie/Urethrozystoskopie";
+		21.0370 "+ Einlage Doppel-J-Katheter bei Zystoskopie/Urethrozystoskopie";
+		21.0380 "+ Ureterenkatheterismus, bei Zystoskopie/Urethrozystoskopie, einseitig";
+		21.0390 "+ Ureterenkatheterismus, bei Zystoskopie/Urethrozystoskopie, beidseitig";
+		21.0400 "+ Steinmanipulation, Push-Back bei Zystoskopie/Urethrozystoskopie, retrograd, pro Seite";
+		21.0410 "Zystoskopie/Urethrozystoskopie beim Mädchen/bei der Frau älter als 16 Jahre";
+		21.0420 "+ Diagnostische Endoskopie bei Zystoskopie/Urethrozystoskopie";
+		21.0430 "+ Biopsie(n) bei Zystoskopie/Urethrozystoskopie";
+		21.0440 "+ Fulguration/Abtragung einer Läsion bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
+		21.0450 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
+		21.0460 "Zystoskopie/Urethrozystoskopie beim Kind/Jugendlichen bis 16 Jahre";
+		21.0470 "Zystoskopie durch Stoma";
+		
+		?????:
+		21.0810 "Uroflowmetrie";
+		21.0820 "Uroflowmetrie mit Beckenboden-{EMG} beim Kind/Jugendlichen bis 16 Jahre";
 	
-	00.0760 "Injektion, intrakutan/intramukös, durch den Facharzt (Bestandteil von 'Allgemeine Grundleistungen')";
-	00.0770 FALSCH ALS SUBITEM!!! "+ Injektion, intrakutan/intramukös, durch den Facharzt, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')";
 	
-	00.0800 "Injektion, intravenös (Bestandteil von 'Allgemeine Grundleistungen')";
-	00.0810 FALSCH ALS SUBITEM!!!"+ Injektion, intravenös, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')";
-	
-	00.0890 "Gefässzugang, Venaesectio durch den Facharzt beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen"
-	00.0900 "Gefässzugang, Venaesectio durch den Facharzt beim Kind bis 7 Jahre" (7 Jahre (+30 Tage))
-	00.0910 "Gefässzugang, Venaesectio durch den Facharzt bei Frühgeborenen und Neugeborenen" (<= 1 Monat (+ 7 Tage) )
-	
-	00.0980 "Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze"
-	00.0990 FALSCH ALS SUBITEM!!! "+ Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre"
-	
-	00.0995 "Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze";
-	00.0996 FALSCH ALS SUBITEM!!! "+ Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre";
-	
-	01.0210 "Härtende Verbände (Zirkulärverbände/Schienen), Kategorie I";
-	01.0250 "+ Zuschlag bei härtenden Verbänden beim Kind bis 7 Jahre";
-	
-	Kapitel 03 +++++ not yet implemented
-	Kapitel 05 +++++ not yet implemented
-	
-	08.0480 ALTER WIRD NOCH NICHT GETESTET "Orientierende Motilitätsprüfung und Stereopsisprüfung beim Kind bis 7 Jahre, beidseitig";""
-	
-	08.0650 "Tränenwegsondierung, einseitig";
-	08.0660 "+ Zuschlag beim Kind bis 7 Jahre bei Tränenwegsondierung";
-	
-	08.2150 "Fremdkörperentfernung aus Kornea und Sklera, tiefe Lage, mit Entfernung des Rosthofes, erster Fremdkörper";
-	08.2170 "+ Zuschlag für Fremdkörperentfernung(en) aus Kornea und Sklera beim Kind bis 7 Jahre";
-	
-	08.2760" Extractio lentis/Phakoemulsifikation, inkl. Implantation einer künstlichen Linse und Einsetzen eines Kapselspannringes";
-	08.2830" + Zuschlag beim Kind bis 7 Jahre bei Extractio lentis/Phakoemulsifikation";
-	
-	09.0120 "Untersuchung mit Ohrmikroskop, pro Seite";
-	09.0130 FALSCH ALS SUBITEM!!! "+ Untersuchung mit Ohrmikroskop beim Kind bis 7 Jahre";
-	
-	09.0310 "Reintonaudiogramm, Luftleitung, pro Seite";
-	09.0320 "+ Zuschlag beim Kind bis 7 Jahre bei Reintonaudiogramm, Luftleitung, pro Seite";
-	
-	09.0340 "Reintonaudiogramm, Luftleitung und Knochenleitung, beidseitig";
-	09.0350 "+ Zuschlag beim Kind bis 7 Jahre bei Reintonaudiogramm, Luftleitung und Knochenleitung, beidseitig";
-	
-	09.0560 "Registrierung otoakustischer Emissionen, beidseitig";
-	09.0570 "+ Zuschlag beim Kind bis 7 Jahre bei Registrierung otoakustischer Emissionen, beidseitig";
-	
-	09.0930 "Erschwerte Gehörgangsreinigung mittels Mikroskop, pro Seite";
-	09.0940 "+ Zuschlag beim Kind bis 7 Jahre bei erschwerter Gehörgangsreinigung mittels Mikroskop, pro Seite";
-	
-	09.1105 "Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als alleinige Leistung";
-	09.1106 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Erwachsenen älter als 16 Jahre, pro Seite";
-	09.1107 "+ Einlage eines Röhrchens bei Parazentese des Trommelfells beim Erwachsenen älter als 16 Jahre, pro Seite";
-	09.1110 "Parazentese des Trommelfelles beim Kind/Jugendlichen bis 16 Jahre, pro Seite, als alleinige Leistung";
-	09.1120 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Kind/Jugendlichen bis 16 Jahre , pro Seite";
-	09.1130 "+ Einlage eines Röhrchens bei Parazentese des Trommelfells beim Kind/Jugendlichen bis 16 Jahre , pro Seite";
-	09.1140 "(+) Parazentese des Trommelfelles beim Kind/Jugendlichen bis 16 Jahre, pro Seite, als Zuschlagsleistung";
-	09.1145 "(+) Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als Zuschlagsleistung";
-	
-	10.0110 "Reposition einer Septumluxation beim Neugeborenen";
-	
-	10.0630 "Endonasale Fremdkörperextraktion aus dem mittleren/hinteren Drittel der Nasenhöhle";
-	10.0640 "+ Zuschlag beim Kind bis 7 Jahre bei endonasaler Fremdkörperextraktion";
-	
-	15.0130 "Kleine Spirometrie mit Dokumentation der Flussvolumenkurve"
-	15.0140 "+ Zuschlag beim Kind bis 7 Jahre bei Spirometrie mit Dokumentation der Flussvolumenkurve";
-	
-	15.0160 "Vollständige Spirometrie und Resistance (Plethysmografie)";
-	15.0170 "+ Zuschlag beim Kind/Jugendlichen bis 16 Jahre bei vollständiger Spirometrie und Resistance (Plethysmografie)";
-	
-	15.0180 "Spirometrie und FRC-Messung/Plethysmografie beim Kind bis 3 Jahre";
-	
-	15.0410 "Bronchoskopie, starr, diagnostisch und therapeutisch";
-	15.0430 "+ Zuschlag beim Kind bis 7 Jahre bei starrer/flexibler Bronchoskopie";
-	
-	17.0010 "Elektrokardiogramm ({EKG})";
-	17.0040 "+ Zuschlag beim Kind bis 7 Jahre bei Elektrokardiogramm ({EKG})";
-	
-	17.0230 "Echokardiografie, transthorakal, Kontrolluntersuchung";
-	17.0240 "Echokardiografie, transthorakal, beim Kind bis 3 Jahre";
-	17.0250 "Echokardiografie, transthorakal, beim Kind/Jugendlichen ab 3 bis 16 Jahre";
-	
-	17.0260 "Echokardiografie, transoesophageal";
-	17.0270 "+ Echokardiografie, transoesophageal beim Kind bis 7 Jahre";
-	
-	17.0710 "Kardangiografie, Grundleistung I";
-	17.0720 "+ Zuschlag zur Grundleistung I beim Kind bis 7 Jahre";
-	17.0730 "+ Zuschlag zur Grundleistung I beim Kind/Jugendlichen ab 7 bis 16 Jahre";
-	
-	19.0060 "Legen einer Magensonde durch den Facharzt";
-	19.0070 "+ Zuschlag beim Kind bis 7 Jahre beim Legen einer Magensonde durch den Facharzt";
-	
-	19.1750 "Digitale Ausräumung des Rektums durch den Facharzt beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen";
-	19.1760 "Digitale Ausräumung des Rektums durch den Facharzt beim Kind bis 7 Jahre";
-	
-	20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
-	20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
-	20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
-	20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
-	20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
-	20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
-	20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
-	20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
-	20.0330 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, einseitig";
-	20.0340 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, beidseitig";
-	20.0350 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
-	20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
-	20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
-	20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
-	20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
-	20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
-	20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
-	20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
-	20.0460 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, einseitig";
-	20.0470 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, beidseitig";
-	20.0480 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
-	20.0490 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
-	
-	20.1350 "Entfernung retroperitonealer Tumoren, beim Kind bis 7 Jahre, als alleinige Leistung exkl. Zugang";"20.2840"
-	
-	20.2840 "Entfernung retroperitonealer Tumoren, beim Kind/Jugendlichen und Erwachsenen älter als 7 Jahre, als alleinige Leistung exkl. Zugang";
-	20.2850 "Operative Korrekturversorgung bei kongenitalen Darmanomalien/Malrotation im Frühkindesalter bis 2 Jahre";
-	
-	21.0010 "Blasenkatheterismus, diagnostisch und therapeutisch beim Knaben/Mann älter als 16 Jahre, durch den Facharzt";
-	21.0020 "Blasenkatheterismus, diagnostisch und therapeutisch beim Mädchen/bei der Frau älter als 16 Jahre, durch den Facharzt";
-	21.0030 "Blasenkatheterismus, diagnostisch und therapeutisch beim Kind/Jugendlichen bis 16 Jahre, durch den Facharzt";
-	
-	21.0110 "Urethroskopie, urethraler Zugang beim Knaben/Mann älter als 16 Jahre";
-	21.0120 "+ Zuschlag für perinealen Zugang bei Urethroskopie";
-	21.0130 "+ Biopsie bei Urethroskopie";
-	21.0140 "+ Fulguration/Abtragung einer Läsion bei Urethroskopie, unabhängig der Anzahl";
-	21.0150	"+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Urethroskopie, unabhängig der Anzahl";
-	21.0160 "Urethroskopie, urethraler Zugang beim Mädchen/bei der Frau älter als 16 Jahre";
-	21.0170 "+ Zuschlag für perinealen Zugang bei Urethroskopie";
-	21.0180 "+ Biopsie bei Urethroskopie";
-	21.0190 "+ Fulguration/Abtragung einer Läsion bei Urethroskopie, unabhängig der Anzahl";
-	21.0200 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Urethroskopie, unabhängig der Anzahl";
-	21.0210 "Urethroskopie, urethraler Zugang beim Kind/Jugendlichen bis 16 Jahre";
-	21.0220 "+ Resektion posteriore Urethralklappen beim Kind/Jugendlichen bis 16 Jahre";
-	
-	///////////////
-	21.0310 "Zystoskopie/Urethrozystoskopie beim Knaben/Mann älter als 16 Jahre";
-	21.0320 "+ Diagnostische Endoskopie bei Zystoskopie/Urethrozystoskopie";
-	21.0330 "+ Biopsie(n) bei Zystoskopie/Urethrozystoskopie";
-	21.0340 "+ Fulguration/Abtragung einer Läsion bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
-	21.0350 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
-	21.0360 "+ Lithotripsie, inkl. Trümmerentfernung, bei Zystoskopie/Urethrozystoskopie";
-	21.0370 "+ Einlage Doppel-J-Katheter bei Zystoskopie/Urethrozystoskopie";
-	21.0380 "+ Ureterenkatheterismus, bei Zystoskopie/Urethrozystoskopie, einseitig";
-	21.0390 "+ Ureterenkatheterismus, bei Zystoskopie/Urethrozystoskopie, beidseitig";
-	21.0400 "+ Steinmanipulation, Push-Back bei Zystoskopie/Urethrozystoskopie, retrograd, pro Seite";
-	21.0410 "Zystoskopie/Urethrozystoskopie beim Mädchen/bei der Frau älter als 16 Jahre";
-	21.0420 "+ Diagnostische Endoskopie bei Zystoskopie/Urethrozystoskopie";
-	21.0430 "+ Biopsie(n) bei Zystoskopie/Urethrozystoskopie";
-	21.0440 "+ Fulguration/Abtragung einer Läsion bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
-	21.0450 "+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Zystoskopie/Urethrozystoskopie, unabhängig der Anzahl";
-	21.0460 "Zystoskopie/Urethrozystoskopie beim Kind/Jugendlichen bis 16 Jahre";
-	21.0470 "Zystoskopie durch Stoma";
-	
-	// +++++ weiterführen
-	*/
+		
+		// +++++ weiterführen
+		*/
 	/**
 	 * These strings will be stripped/replaced from the original text shown in the tarmed tree when
 	 * doing automatic 5-minute-chunk additions.
@@ -431,6 +493,14 @@ public class TarmedOptifierLists {
 		fiveMinuteChunkCodeMaps, ageGroupLists
 	};
 	
+	public static ArrayList<String> childrensAdditionsArray = new ArrayList<String>();
+	
+	static {
+		for (String[] sa : childrensAdditions)
+			// *** add all items except the first one
+			for (String s : sa)
+				childrensAdditionsArray.add(s);
+	}
 	/**
 	 * contains an array of codes that are simply skipped for optifiying because they are added by
 	 * the procs themselves.
