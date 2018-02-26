@@ -95,7 +95,17 @@ public class TarmedOptifierLists {
 			// *** 08.0660 "+ Zuschlag beim Kind bis 7 Jahre bei Tränenwegsondierung";
 			"08.0650", "08.0660"
 		}, {
-			// *** Dies ist ein Zuschlag, auch wenn sprachlich nicht korrekt deklariert
+			// *** Dies ist ein Zuschlag, auch wenn sprachlich nicht explizit als solcher deklariert
+			// *** 00.0760 "Injektion, intrakutan/intramukös, durch den Facharzt (Bestandteil von 'Allgemeine Grundleistungen')";
+			// *** 00.0770 "+ Injektion, intrakutan/intramukös, durch den Facharzt, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')"; FALSCH ALS SUBITEM!!! 
+			"00.0760", "00.0770"
+		}, {
+			// *** Dies ist ein Zuschlag, auch wenn sprachlich nicht explizit als solcher deklariert
+			// *** 00.0800 "Injektion, intravenös (Bestandteil von 'Allgemeine Grundleistungen')";
+			// *** 00.0810 "+ Injektion, intravenös, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')"; FALSCH ALS SUBITEM!!!
+			"00.0800", "00.0810"
+		}, {
+			// *** Dies ist ein Zuschlag, auch wenn sprachlich nicht explizit als solcher deklariert
 			// *** 00.0980 "Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze"
 			// *** 00.0990 "+ Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre" FALSCH ALS SUBITEM!!!
 			"00.0980", "00.0990"
@@ -209,9 +219,10 @@ public class TarmedOptifierLists {
 	};
 	
 	/**
-	 * Tarmed positions which are actually the same - just the age range is different. You can't
-	 * test them safely by the data supplied by admin.ch, so we need a hand-made list... Would be
-	 * nice to have better data from / better people at admin.ch...
+	 * Tarmed positions which are actually the same - just the age range is different.<br>
+	 * You MUST sort the positions descending by age!<br>
+	 * You can't test them safely by the data supplied by admin.ch, so we need a hand-made list...
+	 * Would be nice to have better data from / better people at admin.ch...
 	 */
 	public final static String[][] ageConnections = {
 		//{
@@ -221,14 +232,6 @@ public class TarmedOptifierLists {
 		// "00.0730", "00.0740"
 		//},
 		{
-			// *** 00.0760 "Injektion, intrakutan/intramukös, durch den Facharzt (Bestandteil von 'Allgemeine Grundleistungen')";
-			// *** 00.0770 "+ Injektion, intrakutan/intramukös, durch den Facharzt, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')"; FALSCH ALS SUBITEM!!! 
-			"00.0760", "00.0770"
-		}, {
-			// *** 00.0800 "Injektion, intravenös (Bestandteil von 'Allgemeine Grundleistungen')";
-			// *** 00.0810 "+ Injektion, intravenös, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')"; FALSCH ALS SUBITEM!!!
-			"00.0800", "00.0810"
-		}, {
 			// *** 00.0890 "Gefässzugang, Venaesectio durch den Facharzt beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen"
 			// *** 00.0900 "Gefässzugang, Venaesectio durch den Facharzt beim Kind bis 7 Jahre" (7 Jahre (+30 Tage))
 			// *** 00.0910 "Gefässzugang, Venaesectio durch den Facharzt bei Frühgeborenen und Neugeborenen" (<= 1 Monat (+ 7 Tage) )
@@ -247,62 +250,61 @@ public class TarmedOptifierLists {
 			"09.1107", "09.1130"
 		}, {
 			// *** 17.0230 "Echokardiografie, transthorakal, Kontrolluntersuchung";
-			// *** 17.0240 "Echokardiografie, transthorakal, beim Kind bis 3 Jahre";
 			// *** 17.0250 "Echokardiografie, transthorakal, beim Kind/Jugendlichen ab 3 bis 16 Jahre";
-			"17.0230", "17.0240", "17.0250"
+			// *** 17.0240 "Echokardiografie, transthorakal, beim Kind bis 3 Jahre";
+			"17.0230", "17.0250", "17.0240"
 		}, {
 			// *** 20.0330 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, einseitig";
-			// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
-			// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
 			// *** 20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
 			// *** 20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
-			"20.0330", "20.0220", "20.0260", "20.0290", "20.0310"
+			// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
+			// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
+			"20.0330", "20.0290", "20.0310", "20.0260", "20.0220"
 		}, {
 			// *** 20.0350 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
-			// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
-			// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
 			// *** 20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
 			// *** 20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
-			"20.0350", "20.0220", "20.0260", "20.0290", "20.0310"
+			// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
+			// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
+			"20.0350", "20.0290", "20.0310", "20.0260", "20.0220"
 		}, {
 			// *** 20.0340 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, beidseitig";
-			// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
 			// *** 20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
 			// *** 20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
 			// *** 20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
-			// *** 20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
-			"20.0340", "20.0250", "20.0280", "20.0300", "20.0320"
+			// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
+			"20.0340", "20.0280", "20.0300", "20.0320", "20.0250"
 		}, {
 			// *** 20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
-			// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
-			// *** 20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
 			// *** 20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
 			// *** 20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
-			"20.0360", "20.0250", "20.0280", "20.0300", "20.0320"
+			// *** 20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
+			// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
+			"20.0360", "20.0300", "20.0320", "20.0280", "20.0250"
 		}, {
 			// *** 20.0460 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, einseitig";
-			// *** 20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
 			// *** 20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
 			// *** 20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
-			"20.0460", "20.0370", "20.0420", "20.0440"
+			// *** 20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
+			"20.0460", "20.0420", "20.0440", "20.0370"
 		}, {
 			// *** 20.0480 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
-			// *** 20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
 			// *** 20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
 			// *** 20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
-			"20.0480", "20.0370", "20.0420", "20.0440"
+			// *** 20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
+			"20.0480", "20.0420", "20.0440", "20.0370"
 		}, {
 			// *** 20.0470 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, beidseitig";
-			// *** 20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
 			// *** 20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
 			// *** 20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
-			"20.0470", "20.0410", "20.0430", "20.0450"
+			// *** 20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
+			"20.0470", "20.0430", "20.0450", "20.0410"
 		}, {
 			// *** 20.0490 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
-			// *** 20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
 			// *** 20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
 			// *** 20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
-			"20.0490", "20.0410", "20.0430", "20.0450"
+			// *** 20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
+			"20.0490", "20.0430", "20.0450", "20.0410"
 		}, {
 			// *** 21.0010 "Blasenkatheterismus, diagnostisch und therapeutisch beim Knaben/Mann älter als 16 Jahre, durch den Facharzt";
 			// *** 21.0020 "Blasenkatheterismus, diagnostisch und therapeutisch beim Mädchen/bei der Frau älter als 16 Jahre, durch den Facharzt";
@@ -340,19 +342,19 @@ public class TarmedOptifierLists {
 		{
 			// *** 20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
 			// *** 20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
-			// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
-			// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
+			//// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
+			//// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
 			// *** 20.0330 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, einseitig";
 			// *** 20.0350 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
-			"20.0310", "20.0290", "20.0220", "20.0260", "20.0330", "20.0350"
+			"20.0310", "20.0290", /*"20.0220", "20.0260", */"20.0330", "20.0350"
 		}, {
 			// *** 20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
 			// *** 20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
-			// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
-			// *** 20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
+			//// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
+			//// *** 20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
 			// *** 20.0340 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, beidseitig";
 			// *** 20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
-			"20.0320", "20.0300", "20.0250", "20.0280", "20.0340", "20.0360"
+			"20.0320", "20.0300", /*"20.0250", "20.0280",*/ "20.0340", "20.0360"
 		}, {
 			// *** 20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
 			// *** 20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";

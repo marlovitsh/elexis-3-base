@@ -593,8 +593,6 @@ public class TarmedOptifier implements IOptifier {
 									boolean isInRange = isAgeOk(kons, correctedAgePosition);
 									if (isInRange) {
 										isAddingConnected___2 = true;
-										//										return this.add(
-										//											getKonsVerrechenbar(correctedAgePosition, kons), kons);
 										IVerrechenbar toBeAddedSwitched = TarmedLeistung
 											.getFromCode(correctedAgePosition, date, law);
 										return kons.addLeistung(toBeAddedSwitched);
