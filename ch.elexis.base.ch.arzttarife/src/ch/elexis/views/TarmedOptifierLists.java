@@ -8,6 +8,8 @@ import java.util.ArrayList;
  * children-additions, etc. This may be changing over time with changes of the tarmed. Do NOT place
  * anything else in this file.
  */
+// +++++ %-Zuschläge nicht generell gelöst
+// +++++ 32 65 70 bug
 public class TarmedOptifierLists {
 	/**
 	 * Contains all the positions that define 5-minute-chunks in the form:
@@ -93,6 +95,16 @@ public class TarmedOptifierLists {
 			// *** 08.0660 "+ Zuschlag beim Kind bis 7 Jahre bei Tränenwegsondierung";
 			"08.0650", "08.0660"
 		}, {
+			// *** Dies ist ein Zuschlag, auch wenn sprachlich nicht korrekt deklariert
+			// *** 00.0980 "Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze"
+			// *** 00.0990 "+ Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre" FALSCH ALS SUBITEM!!!
+			"00.0980", "00.0990"
+		}, {
+			// *** Dies ist ein Zuschlag, auch wenn sprachlich nicht explizit deklariert
+			// *** 00.0995 "Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze";
+			// *** 00.0996 "+ Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
+			"00.0995", "00.0996"
+		}, {
 			// *** 08.2150 "Fremdkörperentfernung aus Kornea und Sklera, tiefe Lage, mit Entfernung des Rosthofes, erster Fremdkörper";
 			// *** 08.2170 "+ Zuschlag für Fremdkörperentfernung(en) aus Kornea und Sklera beim Kind bis 7 Jahre";
 			"08.2150", "08.2170"
@@ -100,6 +112,11 @@ public class TarmedOptifierLists {
 			// *** 08.2760" Extractio lentis/Phakoemulsifikation, inkl. Implantation einer künstlichen Linse und Einsetzen eines Kapselspannringes";
 			// *** 08.2830" + Zuschlag beim Kind bis 7 Jahre bei Extractio lentis/Phakoemulsifikation";
 			"08.2760", "08.2830"
+		}, {
+			// *** Dies ist ein Zuschlag, auch wenn sprachlich nicht explizit deklariert
+			// *** 09.0120 "Untersuchung mit Ohrmikroskop, pro Seite";
+			// *** 09.0130 "+ Untersuchung mit Ohrmikroskop beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
+			"09.0120", "09.0130"
 		}, {
 			// *** 09.0310 "Reintonaudiogramm, Luftleitung, pro Seite";
 			// *** 09.0320 "+ Zuschlag beim Kind bis 7 Jahre bei Reintonaudiogramm, Luftleitung, pro Seite";
@@ -137,6 +154,11 @@ public class TarmedOptifierLists {
 			// *** 17.0040 "+ Zuschlag beim Kind bis 7 Jahre bei Elektrokardiogramm ({EKG})";
 			"17.0010", "17.0040"
 		}, {
+			// *** Dies ist ein Zuschlag, auch wenn sprachlich nicht explizit deklariert
+			// *** 17.0260 "Echokardiografie, transoesophageal";
+			// *** 17.0270 "+ Echokardiografie, transoesophageal beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
+			"17.0260", "17.0270"
+		}, {
 			// *** 19.0060 "Legen einer Magensonde durch den Facharzt";
 			// *** 19.0070 "+ Zuschlag beim Kind bis 7 Jahre beim Legen einer Magensonde durch den Facharzt";
 			"19.0060", "19.0070"
@@ -149,16 +171,56 @@ public class TarmedOptifierLists {
 			// *** 17.0720 "+ Zuschlag zur Grundleistung I beim Kind bis 7 Jahre";
 			// *** 17.0730 "+ Zuschlag zur Grundleistung I beim Kind/Jugendlichen ab 7 bis 16 Jahre";
 			"17.0710", "17.0720", "17.0730"
+		}, {
+			// *** 28.0010 "Perioperative Betreuung durch den Facharzt für Anästhesie, Monitored Anesthesia Care (MAC)";
+			// *** 28.0020 "+ %-Zuschlag für Patienten älter als 70 Jahre";
+			"28.0010", "28.0020"
+		}, {
+			// 31.0270 "+ Elektrokardiogramm (EKG)"
+			// 31.0280 "+ Zuschlag beim Kind bis 7 Jahre bei Elektrokardiogramm (EKG)/Arbeitsversuch"
+			"31.0270", "31.0280"
+		}, {
+			// 31.0310 + Belastungs-EKG, Arbeitsversuch
+			// 31.0280 "+ Zuschlag beim Kind bis 7 Jahre bei Elektrokardiogramm (EKG)/Arbeitsversuch"
+			"31.0310", "31.0280"
+		}, {
+			// 32.0665 + Anästhesie bei Stereotaktischer Radiochirurgie. Einmalbestrahlung mit Gamma-Knife-Technik
+			// 32.0670 + Zuschlag für Patienten älter als 70 Jahre
+			"32.0665", "32.0670"
+		}, {
+			// *** 39.6000 "Arteriografie, Grundleistung I"
+			// *** 39.6005 "+ Zuschlag zur Grundleistung I beim Kind bis 7 Jahre"
+			// *** 39.6006 "+ Zuschlag zur Grundleistung I beim Kind/Jugendlichen ab 7 bis 16 Jahre"
+			"39.6000", "39.6005", "39.6006"
+		}, {
+			// *** 39.6040 "Arteriografie, Grundleistung II"
+			// *** 39.6055 "+ Zuschlag zur Grundleistung II beim Kind bis 7 Jahre"
+			"39.6040", "39.6055"
+		}, {
+			// *** 39.6300 "Phlebografie/venöse Intervention, Grundleistung I mittels Direktpunktion"
+			// *** 39.6315 "+ Zuschlag zur Grundleistung beim Kind bis 7 Jahre"
+			// *** 39.6316 2+ Zuschlag zur Grundleistung beim Kind/Jugendlichen ab 7 bis 16 Jahre2
+			"39.6300", "39.6315", "39.6316"
+		}, {
+			// *** 39.6640 "Angiografie Lunge, Grundleistung I"
+			// *** 39.6650 "+ Zuschlag zur Grundleistung beim Kind/Jugendlichen bis 16 Jahre"
+			"39.6640", "39.6650"
 		},
 	};
 	
+	/**
+	 * Tarmed positions which are actually the same - just the age range is different. You can't
+	 * test them safely by the data supplied by admin.ch, so we need a hand-made list... Would be
+	 * nice to have better data from / better people at admin.ch...
+	 */
 	public final static String[][] ageConnections = {
+		//{
+		// +++++ this is NOT the same thing...
+		// *** 00.0730 "Punktion in Reservoirsystem (intravenös, intraarteriell, Liquor) durch den Facharzt";
+		// *** 00.0740 "Punktion u/o Injektion in Reservoirsystem (Liquor) durch den Facharzt beim Kind/Jugendlichen bis 16 Jahre";
+		// "00.0730", "00.0740"
+		//},
 		{
-			// *** 00.0730 "Punktion in Reservoirsystem (intravenös, intraarteriell, Liquor) durch den Facharzt";
-			// *** 00.0740 "Punktion u/o Injektion in Reservoirsystem (Liquor) durch den Facharzt beim Kind/Jugendlichen bis 16 Jahre";
-			// *** use equal although not exactly defined the same way litterally
-			"00.0730", "00.0740"
-		}, {
 			// *** 00.0760 "Injektion, intrakutan/intramukös, durch den Facharzt (Bestandteil von 'Allgemeine Grundleistungen')";
 			// *** 00.0770 "+ Injektion, intrakutan/intramukös, durch den Facharzt, beim Kind bis 7 Jahre (Bestandteil von 'Allgemeine Grundleistungen')"; FALSCH ALS SUBITEM!!! 
 			"00.0760", "00.0770"
@@ -172,23 +234,11 @@ public class TarmedOptifierLists {
 			// *** 00.0910 "Gefässzugang, Venaesectio durch den Facharzt bei Frühgeborenen und Neugeborenen" (<= 1 Monat (+ 7 Tage) )
 			"00.0890", "00.0900", "00.0910"
 		}, {
-			// *** 00.0980 "Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze"
-			// *** 00.0990 "+ Einlage eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre" FALSCH ALS SUBITEM!!!
-			"00.0980", "00.0990"
-		}, {
-			// *** 00.0995 "Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze";
-			// *** 00.0996 "+ Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
-			"00.0995", "00.0996"
-		}, {
-			// *** 09.0120 "Untersuchung mit Ohrmikroskop, pro Seite";
-			// *** 09.0130 "+ Untersuchung mit Ohrmikroskop beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
-			"09.0120", "09.0130"
-		}, {
 			// *** 09.1105 "Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als alleinige Leistung";
 			// *** 09.1110 "Parazentese des Trommelfelles beim Kind/Jugendlichen bis 16 Jahre, pro Seite, als alleinige Leistung";
 			"09.1105", "09.1110"
 		}, {
-			// *** 09.1106 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Erwachsenen älter als 16 Jahre, pro Seite";
+			// *** 09.1106 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Erwachsenen älter als 16 Jahre, pro Seite";""
 			// *** 09.1120 "+ Transtympanische Mittelohrtoilette bei Parazentese des Trommelfells beim Kind/Jugendlichen bis 16 Jahre , pro Seite";
 			"09.1106", "09.1120"
 		}, {
@@ -201,31 +251,130 @@ public class TarmedOptifierLists {
 			// *** 17.0250 "Echokardiografie, transthorakal, beim Kind/Jugendlichen ab 3 bis 16 Jahre";
 			"17.0230", "17.0240", "17.0250"
 		}, {
-			// *** 17.0260 "Echokardiografie, transoesophageal";
-			// *** 17.0270 "+ Echokardiografie, transoesophageal beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
-			"17.0260", "17.0270"
+			// *** 20.0330 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, einseitig";
+			// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
+			// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
+			// *** 20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+			// *** 20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+			"20.0330", "20.0220", "20.0260", "20.0290", "20.0310"
 		}, {
-			// *** 20.1350 "Entfernung retroperitonealer Tumoren, beim Kind bis 7 Jahre, als alleinige Leistung exkl. Zugang";"20.2840"
-			// *** 20.2840 "Entfernung retroperitonealer Tumoren, beim Kind/Jugendlichen und Erwachsenen älter als 7 Jahre, als alleinige Leistung exkl. Zugang";
-			"20.1350", "20.2840"
+			// *** 20.0350 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
+			// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
+			// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
+			// *** 20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+			// *** 20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+			"20.0350", "20.0220", "20.0260", "20.0290", "20.0310"
 		}, {
-		// *** 20.2850 "Entfernung retroperitonealer Tumoren, beim Kind/Jugendlichen und Erwachsenen älter als 7 Jahre, als alleinige Leistung exkl. Zugang";
-		// *** 20.2840 "Entfernung retroperitonealer Tumoren, beim Kind bis 7 Jahre, als alleinige Leistung exkl. Zugang";
+			// *** 20.0340 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, beidseitig";
+			// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
+			// *** 20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
+			// *** 20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+			"20.0340", "20.0250", "20.0280", "20.0300", "20.0320"
+		}, {
+			// *** 20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+			// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
+			// *** 20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
+			// *** 20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+			"20.0360", "20.0250", "20.0280", "20.0300", "20.0320"
+		}, {
+			// *** 20.0460 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, einseitig";
+			// *** 20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
+			// *** 20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+			// *** 20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+			"20.0460", "20.0370", "20.0420", "20.0440"
+		}, {
+			// *** 20.0480 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
+			// *** 20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
+			// *** 20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+			// *** 20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+			"20.0480", "20.0370", "20.0420", "20.0440"
+		}, {
+			// *** 20.0470 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, beidseitig";
+			// *** 20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
+			// *** 20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+			"20.0470", "20.0410", "20.0430", "20.0450"
+		}, {
+			// *** 20.0490 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+			// *** 20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
+			// *** 20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+			"20.0490", "20.0410", "20.0430", "20.0450"
+		}, {
+			// *** 21.0010 "Blasenkatheterismus, diagnostisch und therapeutisch beim Knaben/Mann älter als 16 Jahre, durch den Facharzt";
+			// *** 21.0020 "Blasenkatheterismus, diagnostisch und therapeutisch beim Mädchen/bei der Frau älter als 16 Jahre, durch den Facharzt";
+			// *** 21.0030 "Blasenkatheterismus, diagnostisch und therapeutisch beim Kind/Jugendlichen bis 16 Jahre, durch den Facharzt";
+			"20.0490", "20.0410", "20.0430", "20.0450"
+		}, {
+			// *** 20.2850 "Entfernung retroperitonealer Tumoren, beim Kind/Jugendlichen und Erwachsenen älter als 7 Jahre, als alleinige Leistung exkl. Zugang";
+			// *** 20.2840 "Entfernung retroperitonealer Tumoren, beim Kind bis 7 Jahre, als alleinige Leistung exkl. Zugang";
+			"20.2850", "20.2840"
 		}, {
 			// *** 21.3130 "Operative Versorgung bei Kryptorchismus beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen, einseitig";
 			// *** 21.3135 "Operative Versorgung bei Kryptorchismus, beim Kind bis 7 Jahre, einseitig";
 			"21.3130", "21.3135"
 		}, {
 			// *** 21.3140 "Operative Versorgung bei Kryptorchismus beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen, beidseitig";
+			// *** 21.3145 "Operative Versorgung bei Kryptorchismus, beim Kind bis 7 Jahre, beidseitig"
 			"21.3140", "21.3145"
 		},
 			
+			// +++++ noch vervollständigen
 			// ", beim Kind bis 7 Jahre"
 			// " beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen"
 			// " beim Kind bis 7 Jahre" (7 Jahre (+30 Tage))"
 			// " bei Frühgeborenen und Neugeborenen" (<= 1 Monat (+ 7 Tage) )"
-			// +++++ noch vervollständigen
 	};
+	
+	/**
+	 * <ul>
+	 * <li>male</li>
+	 * <li>female</li>
+	 * <li>others</li>
+	 * </ul>
+	 */
+	public final static String[][] sexConnections = {
+		{
+			// *** 20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+			// *** 20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+			// *** 20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
+			// *** 20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
+			// *** 20.0330 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, einseitig";
+			// *** 20.0350 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
+			"20.0310", "20.0290", "20.0220", "20.0260", "20.0330", "20.0350"
+		}, {
+			// *** 20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
+			// *** 20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
+			// *** 20.0340 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, beidseitig";
+			// *** 20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+			"20.0320", "20.0300", "20.0250", "20.0280", "20.0340", "20.0360"
+		}, {
+			// *** 20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
+			// *** 20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
+			// *** 20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
+			// *** 20.0460 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, einseitig";
+			// *** 20.0480 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
+			"20.0440", "20.0420", "20.0370", "20.0460", "20.0480"
+		}, {
+			// *** 20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
+			// *** 20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
+			// *** 20.0470 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, beidseitig";
+			// *** 20.0490 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
+			"20.0450", "20.0430", "20.0410", "20.0470", "20.0490"
+		}, {
+			// *** 21.0010 "Blasenkatheterismus, diagnostisch und therapeutisch beim Knaben/Mann älter als 16 Jahre, durch den Facharzt";
+			// *** 21.0020 "Blasenkatheterismus, diagnostisch und therapeutisch beim Mädchen/bei der Frau älter als 16 Jahre, durch den Facharzt";
+			// *** 21.0030 "Blasenkatheterismus, diagnostisch und therapeutisch beim Kind/Jugendlichen bis 16 Jahre, durch den Facharzt";
+			"21.0010", "21.0020", "21.0030"
+		}
+	};
+	
 	/* Entweder oder:
 		
 		Kapitel 03 +++++ not yet implemented
@@ -236,41 +385,12 @@ public class TarmedOptifierLists {
 		09.1145 "(+) Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als Zuschlagsleistung";
 		
 		AUCH NOCH GESCHLECHT:
-		20.0220 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, einseitig";
-		20.0250 "Operative Versorgung einer Inguinalhernie beim Neugeborenen, beidseitig";
-		20.0260 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, einseitig";
-		20.0280 "Operative Versorgung einer Inguinalhernie beim Kind bis 7 Jahre, beidseitig";
-		20.0290 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
-		20.0300 "Operative Versorgung einer Inguinalhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
-		20.0310 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
-		20.0320 "Operative Versorgung einer Inguinalhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
-		20.0330 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, einseitig";
-		20.0340 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, tension-free, beidseitig";
-		20.0350 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
-		20.0360 "Operative Versorgung einer Inguinalhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
-		
-		20.0370 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, einseitig";
-		20.0410 "Operative Versorgung einer Femoralhernie beim Kind bis 7 Jahre, beidseitig";
-		20.0420 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, einseitig";
-		20.0430 "Operative Versorgung einer Femoralhernie beim Mädchen ab 7 bis 16 Jahre, beidseitig";
-		20.0440 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, einseitig";
-		20.0450 "Operative Versorgung einer Femoralhernie beim Knaben ab 7 bis 16 Jahre, beidseitig";
-		20.0460 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, einseitig";
-		20.0470 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, Inguinalisation tension-free, beidseitig";
-		20.0480 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, einseitig";
-		20.0490 "Operative Versorgung einer Femoralhernie beim Erwachsenen älter als 16 Jahre, jede Methode, exkl. tension-free, beidseitig";
-		
-		AUCH NOCH GESCHLECHT:
-		21.0010 "Blasenkatheterismus, diagnostisch und therapeutisch beim Knaben/Mann älter als 16 Jahre, durch den Facharzt";
-		21.0020 "Blasenkatheterismus, diagnostisch und therapeutisch beim Mädchen/bei der Frau älter als 16 Jahre, durch den Facharzt";
-		21.0030 "Blasenkatheterismus, diagnostisch und therapeutisch beim Kind/Jugendlichen bis 16 Jahre, durch den Facharzt";
-		
-		AUCH NOCH GESCHLECHT:
 		21.0110 "Urethroskopie, urethraler Zugang beim Knaben/Mann älter als 16 Jahre";
 		21.0120 "+ Zuschlag für perinealen Zugang bei Urethroskopie";
 		21.0130 "+ Biopsie bei Urethroskopie";
 		21.0140 "+ Fulguration/Abtragung einer Läsion bei Urethroskopie, unabhängig der Anzahl";
 		21.0150	"+ Steinentfernung(en)/Fremdkörperentfernung(en) bei Urethroskopie, unabhängig der Anzahl";
+		
 		21.0160 "Urethroskopie, urethraler Zugang beim Mädchen/bei der Frau älter als 16 Jahre";
 		21.0170 "+ Zuschlag für perinealen Zugang bei Urethroskopie";
 		21.0180 "+ Biopsie bei Urethroskopie";
@@ -279,7 +399,7 @@ public class TarmedOptifierLists {
 		21.0210 "Urethroskopie, urethraler Zugang beim Kind/Jugendlichen bis 16 Jahre";
 		21.0220 "+ Resektion posteriore Urethralklappen beim Kind/Jugendlichen bis 16 Jahre";
 		
-		///////////////
+		AUCH NOCH GESCHLECHT:
 		21.0310 "Zystoskopie/Urethrozystoskopie beim Knaben/Mann älter als 16 Jahre";
 		21.0320 "+ Diagnostische Endoskopie bei Zystoskopie/Urethrozystoskopie";
 		21.0330 "+ Biopsie(n) bei Zystoskopie/Urethrozystoskopie";
@@ -302,10 +422,24 @@ public class TarmedOptifierLists {
 		21.0810 "Uroflowmetrie";
 		21.0820 "Uroflowmetrie mit Beckenboden-{EMG} beim Kind/Jugendlichen bis 16 Jahre";
 	
-	
+		22.0030 "Spezielle gynäkologische Beratung durch den Facharzt, pro 5 Min.";
+		22.0035 "Spezielle gynäkologische Beratung durch den Facharzt bei Personen über 6 Jahren und unter 75 Jahren mit einem erhöhten Behandlungsbedarf, pro 5 Min."
 		
-		// +++++ weiterführen
-		 * 22
+		22.0040 "Sterilitätsberatung für die Frau durch den Facharzt für Gynäkologie, pro 5 Min.";
+		22.0045 "Sterilitätsberatung für die Frau durch den Facharzt für Gynäkologie bei Personen über 6 Jahren und unter 75 Jahren mit einem erhöhten Behandlungsbedarf, pro 5 Min."
+		
+		Tests für vorpubertär/Kind/Menarche???
+		22.0210 "Untersuchung des weiblichen Genitale beim vorpubertären Kind, ohne Spekulum";
+		22.0230 "Vaginoskopie beim Kind (vor der Menarche)";
+		
+		?????:
+		32.0110 "(+) Narkose/{IPS}-Zuschlag beim Kind/Jugendlichen älter als 7 Jahre und Erwachsenen";
+		32.0120 "(+) Zuschlag I für Kinder bis 7 Jahre";
+	
+		?????:
+		39.0050 (+) Zuschlag I ohne Kontrastmittel und/oder Hohlraumfüllungen, für Kinder bis 7 Jahre
+		39.0055 (+) Zuschlag II mit Kontrastmittel und/oder Hohlraumfüllungen, für Kinder bis 7 Jahre
+		
 		*/
 	/**
 	 * These strings will be stripped/replaced from the original text shown in the tarmed tree when
@@ -491,8 +625,17 @@ public class TarmedOptifierLists {
 	};
 	
 	public final static String[][][] codeMapListArrays = {
-		fiveMinuteChunkCodeMaps, ageGroupLists
+		fiveMinuteChunkCodeMaps, ageGroupLists, ageConnections
 	};
+	
+	public static ArrayList<String> ageConnectionsArray = new ArrayList<String>();
+	
+	static {
+		for (String[] sa : ageConnections)
+			// *** add all items except the first one
+			for (String s : sa)
+				ageConnectionsArray.add(s);
+	}
 	
 	public static ArrayList<String> childrensAdditionsArray = new ArrayList<String>();
 	
@@ -502,6 +645,7 @@ public class TarmedOptifierLists {
 			for (String s : sa)
 				childrensAdditionsArray.add(s);
 	}
+	
 	/**
 	 * contains an array of codes that are simply skipped for optifiying because they are added by
 	 * the procs themselves.

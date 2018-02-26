@@ -84,6 +84,7 @@ public class TarmedOptifier implements IOptifier {
 	 * internal to avoid addition lopps
 	 */
 	protected boolean isAddingConnected = false;
+	protected boolean isAddingConnected___2 = false;
 	
 	// +++++ END minutes
 	
@@ -193,7 +194,7 @@ public class TarmedOptifier implements IOptifier {
 	 *            the code for which to test
 	 * @return true if in defined age, false if not
 	 */
-	public boolean isNormalAgeForCode(Konsultation kons, String code){
+	public boolean isAgeOk(Konsultation kons, String code){
 		TimeTool date = new TimeTool(kons.getDatum());
 		String law = kons.getFall().getRequiredString("Gesetz");
 		
@@ -254,6 +255,9 @@ public class TarmedOptifier implements IOptifier {
 		
 		// +++++ START
 		String tcid = code.getCode();
+		String law = kons.getFall().getRequiredString("Gesetz");
+		TimeTool date = new TimeTool(kons.getDatum());
+		String sex = kons.getFall().getPatient().getGeschlecht();
 		
 		// *********************************************************************
 		// *** make titles not selectable
@@ -266,9 +270,7 @@ public class TarmedOptifier implements IOptifier {
 		// *** handle connected tarmeds
 		if (bOptify && doOptifyConnectedTarmeds) {
 			if (!isAddingConnected) {
-				isAddingConnected = true;
-				TimeTool date = new TimeTool(kons.getDatum());
-				String law = kons.getFall().getRequiredString("Gesetz");
+				isAddingConnected = false;
 				for (int connectedIx =
 					0; connectedIx < TarmedOptifierLists.connectedTarmeds.length; connectedIx++) {
 					String[] connectedMap = TarmedOptifierLists.connectedTarmeds[connectedIx];
@@ -284,6 +286,29 @@ public class TarmedOptifier implements IOptifier {
 				}
 			} else {
 				isAddingConnected = false;
+			}
+		}
+		
+		// *********************************************************************
+		// *** redirect to correct sex
+		for (int sexIx = 0; sexIx < TarmedOptifierLists.sexConnections.length; sexIx++) {
+			String[] sexMap = TarmedOptifierLists.sexConnections[sexIx];
+			for (String s : sexMap) {
+				if (s.equalsIgnoreCase(tcid)) {
+					if (isAgeOk(kons, sexMap[0])) {
+						int correctedIx = 0;
+						if (sex.equalsIgnoreCase("m"))
+							correctedIx = 0;
+						else
+							correctedIx = 1;
+						IVerrechenbar childToBeAdded =
+							TarmedLeistung.getFromCode(sexMap[correctedIx], date, law);
+						code = childToBeAdded;
+						tc = (TarmedLeistung) childToBeAdded;
+						tcid = code.getCode();
+					}
+					break;
+				}
 			}
 		}
 		
@@ -316,12 +341,9 @@ public class TarmedOptifier implements IOptifier {
 		
 		// *********************************************************************
 		// *** age group "redirects" - change to correct age group, uses TarmedOptifierLists.ageGroupLists
+		boolean skip = TarmedOptifierLists.skipCodesArray.contains(tcid);
 		doOptify5MinuteChunks = true;
 		if (doOptify5MinuteChunks && isKonsAfter2018) {
-			TimeTool date = new TimeTool(kons.getDatum());
-			String law = kons.getFall().getRequiredString("Gesetz");
-			
-			boolean skip = TarmedOptifierLists.skipCodesArray.contains(tcid);
 			if (!skip) {
 				// *** test if in array TarmedOptifierLists.ageGroupLists
 				for (int ageGroupIx =
@@ -333,7 +355,7 @@ public class TarmedOptifier implements IOptifier {
 						
 						// *** change to correct code for age
 						String newCode = tcid;
-						if (!isNormalAgeForCode(kons, ageMap[0])) {
+						if (!isAgeOk(kons, ageMap[0])) {
 							newCode = ageMap[1]; // *** children and older
 						} else {
 							String normalAgeCode = ageMap[0];
@@ -427,11 +449,7 @@ public class TarmedOptifier implements IOptifier {
 		// *********************************************************************
 		// *** handle 5-minute-chunks
 		if (doOptify5MinuteChunks) {
-			String law = kons.getFall().getRequiredString("Gesetz");
-			TimeTool date = new TimeTool(kons.getDatum());
-			
 			// +++++ loop
-			boolean skip = TarmedOptifierLists.skipCodesArray.contains(tcid);
 			if (!skip) {
 				/* special handling for all tarmed 5-minute-chunks with first-middle-last 5 minutes.
 				 * Add the correct 5-minute-chunk code depending on how many chunks are already present
@@ -460,7 +478,7 @@ public class TarmedOptifier implements IOptifier {
 						}
 						
 						// ***  test if current kons is for < 6 years or > 75 years
-						boolean isChildOrOlder = isNormalAgeForCode(kons, codeMap[3]);
+						boolean isChildOrOlder = isAgeOk(kons, codeMap[3]);
 						
 						// *** add 5-minute-chunks depending on numberOfFiveMinuteChunks, age, tarmed version, etc
 						String newCode = tcid;
@@ -554,8 +572,44 @@ public class TarmedOptifier implements IOptifier {
 				}
 			}
 		}
-		// +++++ END
 		
+		// *** handle age-connected positions
+		if (TarmedOptifierLists.ageConnectionsArray.contains(tcid)) {
+			// if (!skip & !isAddingConnected___2) {
+			if (!isAddingConnected___2) {
+				Fall f = kons.getFall();
+				if (f != null) {
+					Patient p = f.getPatient();
+					if (p != null) {
+						for (String[] sa : TarmedOptifierLists.ageConnections) {
+							// *** because the age-items are hidden we will always get the first item in the array
+							if (sa[0].equalsIgnoreCase(tcid)) {
+								// *** we have to test reversly because sometimes the normal-age position has no 
+								// *** age-limit-definitions which would cause the normal-age-position always to
+								// *** be selected
+								//for (int i = 0; i < sa.length; i++) {
+								for (int i = (sa.length - 1); i >= 0; i--) {
+									String correctedAgePosition = sa[i];
+									boolean isInRange = isAgeOk(kons, correctedAgePosition);
+									if (isInRange) {
+										isAddingConnected___2 = true;
+										//										return this.add(
+										//											getKonsVerrechenbar(correctedAgePosition, kons), kons);
+										IVerrechenbar toBeAddedSwitched = TarmedLeistung
+											.getFromCode(correctedAgePosition, date, law);
+										return kons.addLeistung(toBeAddedSwitched);
+									}
+								}
+								break;
+							}
+						}
+					}
+				}
+			} else
+				isAddingConnected___2 = false;
+		}
+		
+		// +++++ END
 		/*
 		 * TODO Hier checken, ob dieser code mit der Dignität und
 		 * Fachspezialisierung des aktuellen Mandanten usw. vereinbar ist
@@ -564,7 +618,6 @@ public class TarmedOptifier implements IOptifier {
 		Hashtable<String, String> ext = tc.loadExtension();
 		// Gültigkeit gemäss Datum und Alter prüfen
 		if (bOptify) {
-			TimeTool date = new TimeTool(kons.getDatum());
 			String dVon = ((TarmedLeistung) code).get("GueltigVon"); //$NON-NLS-1$
 			if (!StringTool.isNothing(dVon)) {
 				TimeTool tVon = new TimeTool(dVon);
@@ -783,7 +836,8 @@ public class TarmedOptifier implements IOptifier {
 			newVerrechnet.setDetail(TL, Double.toString(sumTL));
 		}
 		
-		// *** Zuschlag Kinder - better
+		// +++++ START
+		// *** Zuschlag Kinder - better complete, based on list
 		else if (TarmedOptifierLists.childrensAdditionsArray.contains(tcid)) {
 			if (CoreHub.mandantCfg != null
 				&& CoreHub.mandantCfg.get(RechnungsPrefs.PREF_ADDCHILDREN, false)) {
@@ -795,7 +849,7 @@ public class TarmedOptifier implements IOptifier {
 							if (sa[0].equalsIgnoreCase(tcid)) {
 								for (int i = 1; i < sa.length; i++) {
 									String childrenAddition = sa[i];
-									boolean isInRange = isNormalAgeForCode(kons, childrenAddition);
+									boolean isInRange = isAgeOk(kons, childrenAddition);
 									if (isInRange) {
 										TarmedLeistung tl =
 											(TarmedLeistung) getKonsVerrechenbar(childrenAddition,
@@ -810,6 +864,43 @@ public class TarmedOptifier implements IOptifier {
 				}
 			}
 		}
+		
+		//		// *** handle age-connected positions
+		//		else if (TarmedOptifierLists.ageConnectionsArray.contains(tcid)) {
+		//			if (!skip & !isAddingConnected) {
+		//				Fall f = kons.getFall();
+		//				if (f != null) {
+		//					Patient p = f.getPatient();
+		//					if (p != null) {
+		//						for (String[] sa : TarmedOptifierLists.ageConnections) {
+		//							// *** because the age-items are hidden we will always get the first item in the array
+		//							if (sa[0].equalsIgnoreCase(tcid)) {
+		//								// *** we have to test reversly because sometimes the normal-age position has no 
+		//								// *** age-limit-definitions which would cause the normal-age-position always to
+		//								// *** be selected
+		//								//for (int i = 0; i < sa.length; i++) {
+		//								for (int i = (sa.length - 1); i >= 0; i--) {
+		//									String correctedAgePosition = sa[i];
+		//									boolean isInRange =
+		//										isAgeOk(kons, correctedAgePosition);
+		//									if (isInRange) {
+		//										isAddingConnected = true;
+		//										//										return this.add(
+		//										//											getKonsVerrechenbar(correctedAgePosition, kons), kons);
+		//										IVerrechenbar toBeAddedSwitched = TarmedLeistung
+		//											.getFromCode(correctedAgePosition, date, law);
+		//										return kons.addLeistung(toBeAddedSwitched);
+		//									}
+		//								}
+		//								isAddingConnected = false;
+		//								break;
+		//							}
+		//						}
+		//					}
+		//				}
+		//			} else
+		//				isAddingConnected = false;
+		//		}
 		
 		//		// Zuschlag Kinder
 		//		else if (tcid.equals("00.0010") || tcid.equals("00.0060")) {
@@ -829,6 +920,7 @@ public class TarmedOptifier implements IOptifier {
 		//				}
 		//			}
 		//		}
+		// +++++ END
 		
 		// Zuschläge für Insellappen 50% auf AL und TL bei 1910,20,40,50
 		else if (tcid.equals("04.1930")) { //$NON-NLS-1$
