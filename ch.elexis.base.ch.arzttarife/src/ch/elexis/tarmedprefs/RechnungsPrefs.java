@@ -110,9 +110,9 @@ public class RechnungsPrefs extends PreferencePage implements IWorkbenchPreferen
 	
 	static final String[] ExtFlds =
 		{
-			"Anrede=" + XidConstants.XID_KONTAKT_ANREDE, "Kanton=" + XidConstants.XID_KONTAKT_KANTON, "EAN=" + DOMAIN_EAN, "NIF=" + TarmedRequirements.DOMAIN_NIF, //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+			"Anrede=" + Kontakt.XID_KONTAKT_ANREDE, "Kanton=" + Kontakt.XID_KONTAKT_KANTON, "EAN=" + DOMAIN_EAN, "NIF=" + TarmedRequirements.DOMAIN_NIF, //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 			"KSK=" + TarmedRequirements.DOMAIN_KSK, ta.ESR5OR9, ta.ESRPLUS, ta.TIERS, ta.SPEC, //$NON-NLS-1$
-			ta.KANTON, ta.LOCAL, ta.DIAGSYS, "Rolle=" + XidConstants.XID_KONTAKT_ROLLE
+			ta.KANTON, ta.LOCAL, ta.DIAGSYS, "Rolle=" + Kontakt.XID_KONTAKT_ROLLE
 		};
 	
 	public RechnungsPrefs(){
