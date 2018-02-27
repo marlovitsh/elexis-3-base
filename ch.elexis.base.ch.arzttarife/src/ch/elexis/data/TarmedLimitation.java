@@ -421,6 +421,27 @@ public class TarmedLimitation {
 		return ret;
 	}
 	
+	private List<Verrechnet> getSameVerrechnetOfKons(Verrechnet verrechnet){
+		List<Verrechnet> ret = new ArrayList<>();
+		String verrechnetClass = verrechnet.get(Verrechnet.CLASS);
+		String verrechnetCode = verrechnet.getCode();
+		if(verrechnetClass != null && verrechnetCode != null) {
+			Konsultation kons = verrechnet.getKons();
+			for(Verrechnet leistung : kons.getLeistungen()) {
+				if (verrechnetClass.equals(verrechnet.get(Verrechnet.CLASS))
+					&& verrechnetCode.equals(leistung.getCode())) {
+					ret.add(leistung);
+				}
+			}
+		}
+		return ret;
+	}
+	
+	private int getVerrechnetAmount(Verrechnet verrechnet){
+		List<Verrechnet> sameVerrechnet = getSameVerrechnetOfKons(verrechnet);
+		return getVerrechnetCount(sameVerrechnet);
+	}
+	
 	private boolean shouldSkipTest(){
 		if (skip) {
 			return skip;
