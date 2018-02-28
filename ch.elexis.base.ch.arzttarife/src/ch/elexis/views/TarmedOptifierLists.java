@@ -115,6 +115,10 @@ public class TarmedOptifierLists {
 			// *** 00.0996 "+ Entfernung eines Port-A-Cath/arteriovenösen Reservoirsystems, venös/arteriell, jede Lokalisation der Katheterspitze, beim Kind bis 7 Jahre"; FALSCH ALS SUBITEM!!!
 			"00.0995", "00.0996"
 		}, {
+			// *** 03.0560 "Registrierung otoakustischer Emissionen, beidseitig, beim Kind/Jugendlichen bis 18 Jahre durch den Facharzt für Kinder- und Jugendmedizin";
+			// *** 03.0570 "+ Zuschlag beim Kind bis 7 Jahre bei Registrierung otoakustischer Emissionen, beidseitig";
+			"03.0560", "03.0570"
+		}, {
 			// *** 08.2150 "Fremdkörperentfernung aus Kornea und Sklera, tiefe Lage, mit Entfernung des Rosthofes, erster Fremdkörper";
 			// *** 08.2170 "+ Zuschlag für Fremdkörperentfernung(en) aus Kornea und Sklera beim Kind bis 7 Jahre";
 			"08.2150", "08.2170"
@@ -236,6 +240,36 @@ public class TarmedOptifierLists {
 			// *** 00.0900 "Gefässzugang, Venaesectio durch den Facharzt beim Kind bis 7 Jahre" (7 Jahre (+30 Tage))
 			// *** 00.0910 "Gefässzugang, Venaesectio durch den Facharzt bei Frühgeborenen und Neugeborenen" (<= 1 Monat (+ 7 Tage) )
 			"00.0890", "00.0900", "00.0910"
+		}, {
+			// *** 03.0120 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, ab 14 bis 16 Jahre";
+			// *** 03.0110 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, im 10. Jahr";
+			// *** 03.0100 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, ab 6 bis 7 Jahre";
+			// *** 03.0090 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, im 5. Jahr";
+			// *** 03.0080 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, im 24. Monat";
+			// *** 03.0070 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, vom 15. bis 18. Monat";
+			// *** 03.0060 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, vom 9. bis 12. Monat";
+			// *** 03.0050 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, im 6. Monat";
+			// *** 03.0040	"Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, im 4. Monat";
+			// *** 03.0030	"Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, im 2. Monat";
+			// *** 03.0020 "Vorsorgeuntersuchungen gemäss Empfehlungen {SGP}'93, im 1. Monat";
+			"03.0120", "03.0110", "03.0100", "03.0090", "03.0080", "03.0070", "03.0060", "03.0050",
+			"03.0040", "03.0030", "03.0020"
+		}, {
+			// *** 03.0330 "Entwicklungspädiatrische Untersuchungen beim Kind/Jugendlichen ab 7 bis 18 Jahre, partiell, pro 5 Min.";
+			// *** 03.0310 "Entwicklungspädiatrische Untersuchungen beim Kind bis 7 Jahre, partiell, pro 5 Min.";
+			"03.0330", "03.0310"
+		}, {
+			// *** 03.0340 "Entwicklungspädiatrische Untersuchungen beim Kind/Jugendlichen ab 7 bis 18 Jahre, umfassend, pro 5 Min.";
+			// *** 03.0320 "Entwicklungspädiatrische Untersuchungen beim Kind bis 7 Jahre, umfassend, pro 5 Min.";
+			"03.0340", "03.0320"
+		}, {
+			// *** 03.0430 "Neuromotorische Untersuchungen beim Kind/Jugendlichen ab 7 bis 18 Jahre, partiell, pro 5 Min.";
+			// *** 03.0410 "Neuromotorische Untersuchungen beim Kind bis 7 Jahre, partiell, pro 5 Min.";
+			"03.0430", "03.0410"
+		}, {
+			// *** 03.0440 "Neuromotorische Untersuchungen beim Kind/Jugendlichen ab 7 bis 18 Jahre, umfassend, pro 5 Min.";
+			// *** 03.0420 "Neuromotorische Untersuchungen beim Kind bis 7 Jahre, umfassend, pro 5 Min.";
+			"03.0440", "03.0420"
 		}, {
 			// *** 09.1105 "Parazentese des Trommelfelles beim Erwachsenen älter als 16 Jahre, pro Seite, als alleinige Leistung";
 			// *** 09.1110 "Parazentese des Trommelfelles beim Kind/Jugendlichen bis 16 Jahre, pro Seite, als alleinige Leistung";
@@ -378,8 +412,7 @@ public class TarmedOptifierLists {
 	};
 	
 	/* Entweder oder:
-		
-		Kapitel 03 +++++ not yet implemented
+	
 		Kapitel 05 +++++ not yet implemented
 		
 		????:

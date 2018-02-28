@@ -862,64 +862,7 @@ public class TarmedOptifier implements IOptifier {
 				}
 			}
 		}
-		
-		//		// *** handle age-connected positions
-		//		else if (TarmedOptifierLists.ageConnectionsArray.contains(tcid)) {
-		//			if (!skip & !isAddingConnected) {
-		//				Fall f = kons.getFall();
-		//				if (f != null) {
-		//					Patient p = f.getPatient();
-		//					if (p != null) {
-		//						for (String[] sa : TarmedOptifierLists.ageConnections) {
-		//							// *** because the age-items are hidden we will always get the first item in the array
-		//							if (sa[0].equalsIgnoreCase(tcid)) {
-		//								// *** we have to test reversly because sometimes the normal-age position has no 
-		//								// *** age-limit-definitions which would cause the normal-age-position always to
-		//								// *** be selected
-		//								//for (int i = 0; i < sa.length; i++) {
-		//								for (int i = (sa.length - 1); i >= 0; i--) {
-		//									String correctedAgePosition = sa[i];
-		//									boolean isInRange =
-		//										isAgeOk(kons, correctedAgePosition);
-		//									if (isInRange) {
-		//										isAddingConnected = true;
-		//										//										return this.add(
-		//										//											getKonsVerrechenbar(correctedAgePosition, kons), kons);
-		//										IVerrechenbar toBeAddedSwitched = TarmedLeistung
-		//											.getFromCode(correctedAgePosition, date, law);
-		//										return kons.addLeistung(toBeAddedSwitched);
-		//									}
-		//								}
-		//								isAddingConnected = false;
-		//								break;
-		//							}
-		//						}
-		//					}
-		//				}
-		//			} else
-		//				isAddingConnected = false;
-		//		}
-		
-		//		// Zuschlag Kinder
-		//		else if (tcid.equals("00.0010") || tcid.equals("00.0060")) {
-		//			if (CoreHub.mandantCfg != null
-		//				&& CoreHub.mandantCfg.get(RechnungsPrefs.PREF_ADDCHILDREN, false)) {
-		//				Fall f = kons.getFall();
-		//				if (f != null) {
-		//					Patient p = f.getPatient();
-		//					if (p != null) {
-		//						String alter = p.getAlter();
-		//						if (Integer.parseInt(alter) < 6) {
-		//							TarmedLeistung tl =
-		//								(TarmedLeistung) getKonsVerrechenbar("00.0040", kons);
-		//							add(tl, kons);
-		//						}
-		//					}
-		//				}
-		//			}
-		//		}
-		// +++++ END
-		
+				
 		// Zuschläge für Insellappen 50% auf AL und TL bei 1910,20,40,50
 		else if (tcid.equals("04.1930")) { //$NON-NLS-1$
 			double sumAL = 0.0;
