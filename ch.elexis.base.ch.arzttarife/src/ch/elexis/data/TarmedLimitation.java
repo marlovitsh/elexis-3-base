@@ -394,7 +394,7 @@ public class TarmedLimitation {
 			return ret;
 		}
 		if (limitationAmount == 1 && operator.equals("<=")) {
-			if (verrechnet.getZahl() > amount) {
+			if (getVerrechnetAmount(verrechnet) > amount) {
 				ret = new Result<IVerrechenbar>(Result.SEVERITY.WARNING, TarmedOptifier.KUMULATION,
 					toString(), null, false);
 			}
@@ -408,7 +408,7 @@ public class TarmedLimitation {
 			return ret;
 		}
 		if (limitationAmount == 1 && operator.equals("<=")) {
-			if (verrechnet.getZahl() > amount) {
+			if (getVerrechnetAmount(verrechnet) > amount) {
 				if (limitationUnit == LimitationUnit.SESSION) {
 					ret = new Result<IVerrechenbar>(Result.SEVERITY.WARNING,
 						TarmedOptifier.KUMULATION, toString(), null, false);
