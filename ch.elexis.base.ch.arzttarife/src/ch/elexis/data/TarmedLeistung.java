@@ -262,6 +262,10 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 				vals[1] = vals[1].replace(
 					(CharSequence) TarmedOptifierLists.itemReplacements5MinuteCodes[ii][0],
 					(CharSequence) TarmedOptifierLists.itemReplacements5MinuteCodes[ii][1]);
+			for (int ii = 0; ii < TarmedOptifierLists.itemReplacementsAgeConnections.length; ii++)
+				vals[1] = vals[1].replace(
+					(CharSequence) TarmedOptifierLists.itemReplacementsAgeConnections[ii][0],
+					(CharSequence) TarmedOptifierLists.itemReplacementsAgeConnections[ii][1]);
 		}
 		return vals[0] + spacer + vals[1]
 			+ ((vals[2] != null && !vals[2].isEmpty()) ? " (" + vals[2] + ")" : "");
