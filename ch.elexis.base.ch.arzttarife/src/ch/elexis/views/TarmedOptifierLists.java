@@ -12,6 +12,56 @@ import java.util.ArrayList;
 // +++++ 32 65 70 bug
 
 public class TarmedOptifierLists {
+	public static final String SPARTEPRAXISOP = "0045";
+	public static final String SPARTEOPI = "0049";
+	public static final String SPARTEOPII = "0050";
+	public static final String SPARTEOPIII = "0051";
+	public static final String CODEPRAXISOP = "35.0010";
+	public static final String CODEOPI = "35.0030";
+	public static final String CODEOPII = "35.0040";
+	public static final String CODEOPIII = "35.0050";
+	
+	public static ArrayList<String> ALLOPSPARTEN = new ArrayList<String>();
+	static {
+		ALLOPSPARTEN.add(SPARTEPRAXISOP);
+		ALLOPSPARTEN.add(SPARTEOPI);
+		ALLOPSPARTEN.add(SPARTEOPII);
+		ALLOPSPARTEN.add(SPARTEOPIII);
+	}
+	public static ArrayList<String> ALLOPCODES = new ArrayList<String>();
+	static {
+		ALLOPCODES.add(CODEPRAXISOP);
+		ALLOPCODES.add(CODEOPI);
+		ALLOPCODES.add(CODEOPII);
+		ALLOPCODES.add(CODEOPIII);
+	}
+	
+	// *** sparte-OPCode-declaredOP
+	public static final String[][] opTypeMapping = {
+		{
+			SPARTEPRAXISOP, CODEPRAXISOP
+		},
+		//{SPARTEOPI, CODEPRAXISOP},
+		{
+			SPARTEOPI, CODEOPI
+		}, {
+			SPARTEOPII, CODEOPII
+		}, {
+			SPARTEOPIII, CODEOPIII
+		},
+	};
+	
+	public final static String[] PROZENTZUSCHLAEGE = {
+		"04.0620", "04.1930", "06.0430", "06.0440", "06.0730", "06.0740", "07.0300", "10.1040",
+		"10.1050", "11.0120", "24.0250", "24.3250", "28.0020", "29.2090", "30.0330", "30.6310"
+	};
+	public static ArrayList<String> PROZENTZUSCHLAEGEARRAYLIST = new ArrayList<String>();
+	
+	static {
+		for (String s : PROZENTZUSCHLAEGE)
+			PROZENTZUSCHLAEGEARRAYLIST.add(s);
+	}
+	
 	/**
 	 * Contains all the positions that define 5-minute-chunks in the form:
 	 * <ul>

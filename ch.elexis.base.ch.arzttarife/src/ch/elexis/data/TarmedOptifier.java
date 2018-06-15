@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import ch.elexis.core.data.interfaces.IVerrechenbar;
 import ch.elexis.core.data.interfaces.IVerrechenbar.DefaultOptifier;
 import ch.elexis.core.ui.util.SWTHelper;
 import ch.elexis.data.TarmedKumulation.TarmedKumulationType;
+import ch.elexis.data.TarmedLeistung.MandantType;
 import ch.elexis.data.TarmedLimitation.LimitationUnit;
 import ch.elexis.data.importer.TarmedLeistungAge;
 import ch.elexis.data.importer.TarmedReferenceDataImporter;
@@ -94,10 +96,10 @@ public class TarmedOptifier implements IOptifier {
 	/**
 	 * internal to avoid addition loops
 	 */
-	protected boolean isAddingConnected = false;
 	protected boolean isAddingConnected___2 = false;
 	protected boolean isAddingChildrensAddition = false;
 	protected boolean isAddingOp = false;
+	protected boolean isAddingParent = false;
 	
 	public void enableOptifier(boolean enabled){
 		optifierEnabled = enabled;
@@ -134,6 +136,9 @@ public class TarmedOptifier implements IOptifier {
 	private String newVerrechnetSide;
 	
 	private Map<String, Object> contextMap;
+	
+	// ++++++++++++++
+	boolean firstCall = true;
 	
 	/**
 	 * Hier kann eine Konsultation als Ganzes nochmal überprüft werden
@@ -194,15 +199,22 @@ public class TarmedOptifier implements IOptifier {
 	 *         one position.
 	 */
 	public TarmedLeistung[] getMatchingTarmedParents(TarmedLeistung childElement, TimeTool date){
+		String str = "";
 		String theParent = childElement.getParent();
 		TarmedLeistung tarm = TarmedLeistung.load(theParent);
 		TarmedLeistung[] childrenTarmedLeistungen = getTarmedChildren(tarm, date);
 		ArrayList<TarmedLeistung> matchingChildren = new ArrayList<TarmedLeistung>();
 		for (TarmedLeistung tml : childrenTarmedLeistungen) {
+			System.out.println(tml.getCode());
+			str = str + tml.getCode() + "\n";
 			System.out.println(tml.getText());
+			
+			List<String> hier = tml.getHierarchy(date);
+			
 			if (tml.getHierarchy(date).contains(childElement.getCode()))
 				matchingChildren.add(tml);
 		}
+		System.out.println(str);
 		return matchingChildren.toArray(new TarmedLeistung[matchingChildren.size()]);
 	}
 	
@@ -266,6 +278,144 @@ public class TarmedOptifier implements IOptifier {
 	}
 	
 	/**
+	 * Get the name for a given opNum as defined in tarmed (0045/0049/0050/0051)
+	 * 
+	 * @param opNum
+	 *            the opNum for which to search the name
+	 * @param defaultOPName
+	 *            if opNum doesn't match, then return this as default name
+	 */
+	public String getOpSpartenName(String opNum, String defaultOPName){
+		String opToBeUsedStr = defaultOPName;
+		DBConnection dbConnection = PersistentObject.getDefaultConnection();
+		Stm stm = null;
+		try {
+			stm = dbConnection.getStatement();
+			String tmp = stm.queryString(
+				"SELECT titel FROM TARMED_DEFINITIONEN WHERE deleted='0' AND  Spalte = 'SPARTE'  AND  Kuerzel = '"
+					+ opNum + "'  and law = ''");
+			System.out.println(opToBeUsedStr);
+			if (StringUtils.isEmpty(tmp)) {
+				opToBeUsedStr = defaultOPName;
+			} else
+				opToBeUsedStr = " einen " + tmp;
+		} catch (
+		
+		Exception ex) {} finally {
+			dbConnection.releaseStatement(stm);
+		}
+		return opToBeUsedStr;
+	}
+	
+	/**
+	 * Test whether a given TarmedLeistung needs an OP (Praxis-OP/OPI/OPII/OPIII)
+	 * 
+	 * @param tl
+	 *            TechnischeLeistung to be tested
+	 * @return true if needs an OP, false if not
+	 */
+	public static boolean needsOP(TarmedLeistung tl){
+		String sparte = tl.getSparte();
+		return TarmedOptifierLists.ALLOPSPARTEN.contains(sparte);
+	}
+	
+	/**
+	 * Update "Technische Grundleistung für OP anerkannt" for this kons: Find the intervention with
+	 * the highest reimbursement (OPIII>OPII>OPI) for this kons and add/correct the according
+	 * "Technische Grundleistung für OP anerkannt". Test against the prefs and set accordingly. Call
+	 * this AFTER all interventions are added to the kons.<br>
+	 * If Praxis-OP then also update the reductions for the TLs.
+	 * 
+	 * @param kons
+	 *            the Konsultation for which to update TL OP
+	 * @return true if the kons contains some code with OP-Sparte
+	 */
+	// *********************************************************************
+	// *** if the position to be added has Sparte Praxis-OP/0045 or OP I/0049
+	// *** or OP II/0050 or OP III/0051 then automatically add the correct 
+	// *** position for TechnischeGrundleistungOP for the OP-Type defined
+	// *** in the prefs. If Praxis-OP then update the reductions for TL
+	// *** Place this before any other tests since we may need to cancel
+	// *** adding codes because we are missing the correct OP-Type
+	private boolean updateTLOP(Konsultation kons){
+		boolean letAddAsLowerTLOP = true;
+		
+		String maxSparte = "0000";
+		String maxOpCode = "0000";
+		String law = kons.getFall().getRequiredString("Gesetz");
+		TimeTool date = new TimeTool(kons.getDatum());
+		if (!isAddingOp) {
+			// *** find max sparte for all verrechnet in lst - skip TL OP
+			List<Verrechnet> lst = kons.getLeistungen();
+			for (Verrechnet v : lst) {
+				if (v.getVerrechenbar() instanceof TarmedLeistung) {
+					TarmedLeistung tl = (TarmedLeistung) v.getVerrechenbar();
+					String sparte = tl.getSparte();
+					// *** remove any existing Praxis/OPI/OPII/OPIII
+					if (TarmedOptifierLists.ALLOPCODES.contains(v.getCode())) {
+						kons.removeLeistung(v);
+					} else {
+						// *** update sparte
+						if (TarmedOptifierLists.ALLOPSPARTEN.contains(sparte)) {
+							if (sparte.compareTo(maxSparte) > 0) {
+								maxSparte = sparte;
+								maxOpCode = TarmedOptifierLists.ALLOPCODES
+									.get(TarmedOptifierLists.ALLOPSPARTEN.indexOf(sparte));
+							}
+						}
+					}
+				}
+			}
+			
+			// *** add new verrechnet for maxSparte
+			String declaredOPNum = CoreHub.globalCfg.get("billing/optype", "");
+			if (!maxSparte.equalsIgnoreCase("0000")) {
+				isAddingOp = true;
+				// *** test if maxSparte is allowed - see in prefs
+				String compareDeclaredOPNum = declaredOPNum;
+				if (declaredOPNum.equalsIgnoreCase(TarmedOptifierLists.SPARTEPRAXISOP))
+					compareDeclaredOPNum = TarmedOptifierLists.SPARTEOPI;
+				// *** test against declared OP in prefs
+				if ((TarmedOptifierLists.ageConnectionsArray.contains(maxSparte))
+					&& (maxSparte.compareTo(compareDeclaredOPNum) > 0)) {
+					String declaredOPStr = getOpSpartenName(declaredOPNum, "keinen OP");
+					//String declaredOPCode = getOpSpartenName(declaredOPNum, "keinen OP");
+					String maxSparteOPStr = getOpSpartenName(maxSparte, "");
+					SWTHelper.alert("", "Sie haben " + declaredOPStr
+						+ " deklariert. (Einstellungen-Abrechnungssysteme)\nFür diesen Eingriff braucht es jedoch mindestens einen "
+						+ maxSparteOPStr);
+					isAddingOp = false;
+					return true;
+				}
+				
+				// *** kann nur maximal den deklarierten OP verrechnen
+				int maxŜparteIx = TarmedOptifierLists.ALLOPSPARTEN.indexOf(maxSparte);
+				String maxSparteCode = TarmedOptifierLists.ALLOPCODES.get(maxŜparteIx);
+				int declaredOPIx = TarmedOptifierLists.ALLOPSPARTEN.indexOf(declaredOPNum);
+				String declaredOPCode = TarmedOptifierLists.ALLOPCODES.get(declaredOPIx);
+				
+				// *** create verrechenbar and add to kons
+				IVerrechenbar verrechenbarTechnischeGrundleistungOP =
+					TarmedLeistung.getFromCode(declaredOPCode, date, law);
+				kons.addLeistung(verrechenbarTechnischeGrundleistungOP);
+				
+				// *** update reductions for Praxis-OP
+				if (declaredOPNum.equalsIgnoreCase(TarmedOptifierLists.SPARTEPRAXISOP)) {
+					IVerrechenbar opPraxisVerrechenbarReductions =
+						TarmedLeistung.getFromCode("35.0020", date, law);
+					kons.addLeistung(opPraxisVerrechenbarReductions);
+					
+				}
+				isAddingOp = false;
+				return true;
+			}
+			isAddingOp = false;
+		}
+		isAddingOp = false;
+		return false;
+	}
+	
+	/**
 	 * Eine Verrechnungsposition zufügen. Der Optifier muss prüfen, ob die Verrechnungsposition im
 	 * Kontext der übergebenen Konsultation verwendet werden kann und kann sie ggf. zurückweisen
 	 * oder modifizieren.
@@ -276,22 +426,25 @@ public class TarmedOptifier implements IOptifier {
 		//				false);
 		
 		if (!(code instanceof TarmedLeistung)) {
+			firstCall = true;
 			return new Result<IVerrechenbar>(Result.SEVERITY.ERROR, LEISTUNGSTYP,
 				Messages.TarmedOptifier_BadType, null, true);
 		}
 		
-		bOptify = CoreHub.userCfg.get(Preferences.LEISTUNGSCODES_OPTIFY, true);
-		
 		TarmedLeistung tc = (TarmedLeistung) code;
-		
-		// +++++ START
 		String tcid = code.getCode();
 		
 		// *********************************************************************
 		// *** make titles not selectable
-		if (!tcid.matches("[0-9][0-9].[0-9][0-9][0-9][0-9]"))
+		if (!tc.isDragOK()) {
+			firstCall = true;
+			SWTHelper.alert("", "Titel können nicht ausgewählt werden");
 			return new Result<IVerrechenbar>(null);
+		}
 		
+		bOptify = CoreHub.userCfg.get(Preferences.LEISTUNGSCODES_OPTIFY, true);
+		
+		// +++++ START
 		// *********************************************************************
 		// *** values used throughout the method
 		String law = kons.getFall().getRequiredString("Gesetz");
@@ -306,70 +459,27 @@ public class TarmedOptifier implements IOptifier {
 		// *** - correct age group according to age of patient
 		// *********************************************************************
 		
-		// +++++ add op
+		// *********************************************************************
+		// *** if this tarmed needs an Praxis-OP/OPI/OPII/OPIII test if declared OP meets this condittion
 		if (bOptify) {
-			String opToBeUsed = CoreHub.globalCfg.get("billing/optype", "");
+			String declaredOPNum = CoreHub.globalCfg.get("billing/optype", "");
 			String sparte = tc.getSparte();
-			if (!isAddingOp) {
-				isAddingOp = true;
-				String newCode = "";
-				if (sparte.equalsIgnoreCase("0045")) {
-					newCode = "35.0010";
-				} else if (sparte.equalsIgnoreCase("0049")) {
-					if (opToBeUsed.equalsIgnoreCase("0045")) {
-						newCode = "35.0010";
-						sparte = opToBeUsed;
-					} else {
-						newCode = "35.0030";
-					}
-				} else if (sparte.equalsIgnoreCase("0050")) {
-					newCode = "35.0040";
-				} else if (sparte.equalsIgnoreCase("0051")) {
-					newCode = "35.0050";
-				}
-				if (!newCode.isEmpty()) {
-					if (sparte.compareTo(opToBeUsed) > 0) {
-						String opToBeUsedStr = "";
-						String sparteStr = "";
-						DBConnection dbConnection = PersistentObject.getDefaultConnection();
-						Stm stm = null;
-						try {
-							stm = dbConnection.getStatement();
-							opToBeUsedStr = stm.queryString(
-								"SELECT titel FROM TARMED_DEFINITIONEN WHERE deleted='0' AND  Spalte = 'SPARTE'  AND  Kuerzel = '"
-									+ opToBeUsed + "'  and law = ''");
-							sparteStr = stm.queryString(
-								"SELECT titel FROM TARMED_DEFINITIONEN WHERE deleted='0' AND  Spalte = 'SPARTE'  AND  Kuerzel = '"
-									+ sparte + "'  and law = ''");
-						} catch (Exception ex) {
-							ex.printStackTrace();
-						} finally {
-							dbConnection.releaseStatement(stm);
-						}
-						
-						boolean resultYes = SWTHelper.askYesNo("", "Sie haben einen "
-							+ opToBeUsedStr
-							+ " deklariert.\nFür diesen Eingriff braucht es jedoch mindestens einen "
-							+ sparteStr
-							+ ".\n\nSollen der Eingriff und die entsprechenden Zuschläge trotzdem verrechnet werden?");
-						if (!resultYes) {
-							isAddingOp = false;
-							return new Result<IVerrechenbar>(null);
-						}
-					}
-					
-					IVerrechenbar opPraxisVerrechenbar =
-						TarmedLeistung.getFromCode(newCode, date, law);
-					kons.addLeistung(opPraxisVerrechenbar);
-					if (newCode.equalsIgnoreCase("35.0010")) {
-						IVerrechenbar opPraxisVerrechenbarReductions =
-							TarmedLeistung.getFromCode("35.0020", date, law);
-						kons.addLeistung(opPraxisVerrechenbarReductions);
-					}
-				}
-				isAddingOp = false;
-			} else
-				isAddingOp = false;
+			String compareDeclaredOPNum = declaredOPNum;
+			if (declaredOPNum.equalsIgnoreCase(TarmedOptifierLists.SPARTEPRAXISOP))
+				compareDeclaredOPNum = TarmedOptifierLists.SPARTEOPI;
+			if ((TarmedOptifierLists.ageConnectionsArray.contains(sparte))
+				&& (sparte.compareTo(compareDeclaredOPNum) > 0)) {
+				SWTHelper.alert("*******", "Sie haben " + "declaredOPStr"
+					+ " deklariert. (Einstellungen-Abrechnungssysteme)\nFür diesen Eingriff braucht es jedoch mindestens einen "
+					+ "maxSparteOPStr");
+				firstCall = true;
+				return new Result<IVerrechenbar>(Result.SEVERITY.ERROR, PREISAENDERUNG, "Sie haben "
+					+ "declaredOPStr"
+					+ " deklariert. (Einstellungen-Abrechnungssysteme)\nFür diesen Eingriff braucht es jedoch mindestens einen "
+					+ "maxSparteOPStr", code, false);
+				
+				//			return new Result<IVerrechenbar>(null);
+			}
 		}
 		
 		// *********************************************************************
@@ -389,44 +499,44 @@ public class TarmedOptifier implements IOptifier {
 			}
 		}
 		
+		List<Verrechnet> lst = kons.getLeistungen();
+		
 		// *********************************************************************
 		// *** handle connected tarmeds
 		// *** THIS ADDS A SECOND CODE making sure that 
 		if (bOptify && doOptifyConnectedTarmeds) {
-			if (!isAddingConnected) {
-				isAddingConnected = false;
-				for (int connectedIx =
-					0; connectedIx < TarmedOptifierLists.CONNECTEDTARMEDS.length; connectedIx++) {
-					String[] connectedMap = TarmedOptifierLists.CONNECTEDTARMEDS[connectedIx];
-					// *** if any of those positions is selected, then first add parent and switch code to child code
-					if (tcid.equalsIgnoreCase(connectedMap[0])
-						|| tcid.equalsIgnoreCase(connectedMap[1])) {
-						// *** add parent code first
-						isAddingConnected = true;
-						boolean oldOptify = bOptify;
-						bOptify = false;
-						String newCode = connectedMap[0];
-						IVerrechenbar parentToBeAdded =
-							TarmedLeistung.getFromCode(newCode, date, law);
-						kons.addLeistung(parentToBeAdded);
-						isAddingConnected = false;
-						bOptify = oldOptify;
-						// *** go on regularly with the connected child code
-						code = TarmedLeistung.getFromCode(connectedMap[1], date, law);
-						tc = (TarmedLeistung) code;
-						tcid = code.getCode();
-						break;
+			for (int connectedIx =
+				0; connectedIx < TarmedOptifierLists.CONNECTEDTARMEDS.length; connectedIx++) {
+				String[] connectedMap = TarmedOptifierLists.CONNECTEDTARMEDS[connectedIx];
+				// *** if any of those positions is selected, then first add parent and switch code to child code
+				if (firstCall) {
+					boolean mainCodeAlreadyThere = false;
+					for (Verrechnet v : lst) {
+						String theCode = v.getCode();
+						System.out.println(theCode);
+						if (theCode.equalsIgnoreCase(tcid))
+							mainCodeAlreadyThere = true;
 					}
+					if (tcid.equalsIgnoreCase(connectedMap[0])) {
+						if (!mainCodeAlreadyThere) {
+							code = TarmedLeistung.getFromCode(connectedMap[1], date, law);
+							tc = (TarmedLeistung) code;
+							tcid = code.getCode();
+						}
+					} else if (tcid.equalsIgnoreCase(connectedMap[1])) {
+						
+					}
+					firstCall = false;
 				}
-			} else {
-				isAddingConnected = false;
 			}
 		}
 		
 		// *********************************************************************
 		// *** Zuschlag Kinder - better/complete, based on list
 		// *** THIS ADDS A SECOND CODE if children's addition needed
-		if (bOptify) {
+		if (bOptify)
+		
+		{
 			if (TarmedOptifierLists.childrensAdditionsArray.contains(tcid)) {
 				if (doAutomaticChildrensAdditions) {
 					if (!isAddingChildrensAddition) {
@@ -479,30 +589,38 @@ public class TarmedOptifier implements IOptifier {
 		
 		// *********************************************************************
 		// *** automatic addition of needed parent codes
+		// *** must add before getting lst (see below)
+		////////////// ++++++++++++++++++++++
+		if (bOptify) {
+			// *** this is recursive, stops when no parents left
+			//			if (!isAddingParent) {
+			boolean isKonsultationType = false; // +++++
+			for (String[] sa : TarmedOptifierLists.FIVEMINUTECHUNKSGROUPS) {
+				for (String s : sa)
+					if (s.equalsIgnoreCase(tcid)) {
+						isKonsultationType = true;
+						break;
+					}
+				if (isKonsultationType)
+					break;
+			}
+			if (!isKonsultationType) {
+				TarmedLeistung[] matchingParents =
+					getMatchingTarmedParents(tc, new TimeTool(kons.getDatum()));
+				if (matchingParents.length > 0) {
+					isAddingParent = true;
+					IVerrechenbar theParentCode =
+						TarmedLeistung.getFromCode(matchingParents[0].getCode(), date, law);
+					kons.addLeistung(theParentCode);
+					isAddingParent = false;
+				}
+			}
+			//				isAddingParent = false;
+			//			} else
+			//				isAddingParent = false;
+		}
 		
-		//		// *** must add before getting lst (see below)
-		//		if (bOptify) {
-		//			boolean isKonsultationType = false;
-		//			for (String[] sa : TarmedOptifierLists.fiveMinuteChunkCodeMaps) {
-		//				for (String s : sa)
-		//					if (s.equalsIgnoreCase(tcid)) {
-		//						isKonsultationType = true;
-		//						break;
-		//					}
-		//				if (isKonsultationType)
-		//					break;
-		//			}
-		//			if (!isKonsultationType) {
-		//				TarmedLeistung[] matchingParents =
-		//					getMatchingTarmedParents(tc, new TimeTool(kons.getDatum()));
-		//				if (matchingParents.length > 0) {
-		//					Result<IVerrechenbar> addResult =
-		//						kons.addLeistung(getKonsVerrechenbar(matchingParents[0].getCode(), kons));
-		//				}
-		//			}
-		//		}
-		
-		List<Verrechnet> lst = kons.getLeistungen();
+		//List<Verrechnet> lst = kons.getLeistungen();
 		
 		// *********************************************************************
 		// *** age group "redirects" - change to correct age group, uses TarmedOptifierLists.ageGroupLists
@@ -594,7 +712,12 @@ public class TarmedOptifier implements IOptifier {
 											TarmedLeistung.getFromCode(newCode, date, law);
 										for (int i = 0; i < numOfVerrechnet; i++)
 											kons.addLeistung(toBeAddedSwitched);
+										firstCall = true;
 										return kons.addLeistung(toBeAddedSwitched);
+									} else {
+										// *** cancel adding
+										firstCall = true;
+										return new Result<IVerrechenbar>(null);
 									}
 								}
 							}
@@ -605,6 +728,7 @@ public class TarmedOptifier implements IOptifier {
 								code = toBeAdded;
 								tc = (TarmedLeistung) toBeAdded;
 								tcid = code.getCode();
+								firstCall = true;
 								return kons.addLeistung(toBeAdded);
 							}
 							break;
@@ -703,11 +827,14 @@ public class TarmedOptifier implements IOptifier {
 												}
 												lastKonsUsed = kons;
 												// *** add new 00.0xx6 version
+												firstCall = true;
 												return kons.addLeistung(toBeAdded);
 											} else {
+												firstCall = true;
 												return new Result<IVerrechenbar>(null);
 											}
 										} else {
+											firstCall = true;
 											return new Result<IVerrechenbar>(
 												Result.SEVERITY.WARNING, EXKLUSION,
 												"Maximal 20 Minuten abrechenbar.", //$NON-NLS-1$
@@ -720,9 +847,10 @@ public class TarmedOptifier implements IOptifier {
 								break;
 							case 6:
 								if (codeMap.length > 3) {
+									firstCall = true;
 									return new Result<IVerrechenbar>(Result.SEVERITY.WARNING,
 										EXKLUSION,
-										"Sie können seit der Revision durch Alain Berset grunzipiell nicht mehr mehr als maximal 30 Minuten verrechnen.",
+										"Sie können seit der Revision durch Alain Berset grunzipiell nur noch maximal 30 Minuten verrechnen.",
 										null, false);
 								} else {
 									newCode = codeMap[1];
@@ -777,10 +905,12 @@ public class TarmedOptifier implements IOptifier {
 											Result<IVerrechenbar> result =
 												kons.addLeistung(toBeAddedSwitched);
 											bOptify = oldOptify;
+											firstCall = true;
 											return result;
 										}
 									}
 									if (!isInRange) {
+										firstCall = true;
 										return new Result<IVerrechenbar>(Result.SEVERITY.WARNING,
 											PATIENTAGE,
 											"Diese Position(en) können für das aktuelle Alter des Patienten nicht abgerechnet werden",
@@ -824,6 +954,7 @@ public class TarmedOptifier implements IOptifier {
 			if (!StringTool.isNothing(dVon)) {
 				TimeTool tVon = new TimeTool(dVon);
 				if (date.isBefore(tVon)) {
+					firstCall = true;
 					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, NOTYETVALID,
 						code.getCode() + Messages.TarmedOptifier_NotYetValid, null, false);
 				}
@@ -832,6 +963,7 @@ public class TarmedOptifier implements IOptifier {
 			if (!StringTool.isNothing(dBis)) {
 				TimeTool tBis = new TimeTool(dBis);
 				if (date.isAfter(tBis)) {
+					firstCall = true;
 					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, NOMOREVALID,
 						code.getCode() + Messages.TarmedOptifier_NoMoreValid, null, false);
 				}
@@ -840,6 +972,7 @@ public class TarmedOptifier implements IOptifier {
 			if (ageLimits != null && !ageLimits.isEmpty()) {
 				String errorMessage = checkAge(ageLimits, kons);
 				if (errorMessage != null) {
+					firstCall = true;
 					return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, PATIENTAGE,
 						errorMessage, null, false);
 				}
@@ -855,20 +988,26 @@ public class TarmedOptifier implements IOptifier {
 			}
 			
 			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0011")) {
+				firstCall = true;
 				return this.add(getKonsVerrechenbar("39.0010", kons), kons);
 			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0010")) {
+				firstCall = true;
 				return this.add(getKonsVerrechenbar("39.0011", kons), kons);
 			}
 			
 			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0016")) {
+				firstCall = true;
 				return this.add(getKonsVerrechenbar("39.0015", kons), kons);
 			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0015")) {
+				firstCall = true;
 				return this.add(getKonsVerrechenbar("39.0016", kons), kons);
 			}
 			
 			if (gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0021")) {
+				firstCall = true;
 				return this.add(getKonsVerrechenbar("39.0020", kons), kons);
 			} else if (!gesetz.equalsIgnoreCase("KVG") && tc.getCode().matches("39.0020")) {
+				firstCall = true;
 				return this.add(getKonsVerrechenbar("39.0021", kons), kons);
 			}
 		}
@@ -879,6 +1018,7 @@ public class TarmedOptifier implements IOptifier {
 			// updated reductions to codes, and get not yet reduced codes
 			List<Verrechnet> availableCodes = updateOPReductions(opCodes, opReduction);
 			if (availableCodes.isEmpty()) {
+				firstCall = true;
 				return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, KOMBINATION,
 					code.getCode(), null, false);
 			}
@@ -886,6 +1026,7 @@ public class TarmedOptifier implements IOptifier {
 				newVerrechnet = new Verrechnet(tc, kons, 1);
 				mapOpReduction(verrechnet, newVerrechnet);
 			}
+			firstCall = true;
 			return new Result<IVerrechenbar>(null);
 		}
 		
@@ -898,7 +1039,7 @@ public class TarmedOptifier implements IOptifier {
 				if (!tc.requiresSide()) {
 					newVerrechnet = v;
 					if (!(",00.2530,00.2570,00.2550,00.2590,04.0620,04.1930,06.0430,06.0440,06.0730,06.0740,07.0300,24.0250,24.3250,28.0020,"
-							.contains("," + code.getCode())))
+						.contains("," + code.getCode())))
 						newVerrechnet.setZahl(newVerrechnet.getZahl() + 1);
 					break;
 				}
@@ -938,6 +1079,7 @@ public class TarmedOptifier implements IOptifier {
 							
 							if (!resCompatible.isOK()) {
 								newVerrechnet.delete();
+								firstCall = true;
 								return resCompatible;
 							}
 						}
@@ -955,6 +1097,7 @@ public class TarmedOptifier implements IOptifier {
 					for (Verrechnet v : lst) {
 						if (v.getCode().equals(excludeCode)) {
 							newVerrechnet.delete();
+							firstCall = true;
 							return new Result<IVerrechenbar>(Result.SEVERITY.WARNING, EXKLUSION,
 								"00.0750 ist nicht im Rahmen einer ärztlichen Beratung 00.0010 verrechnenbar.", //$NON-NLS-1$
 								null, false);
@@ -974,6 +1117,7 @@ public class TarmedOptifier implements IOptifier {
 			List<Verrechnet> masters = getPossibleMasters(newVerrechnet, lst);
 			if (masters.isEmpty()) {
 				decrementOrDelete(newVerrechnet);
+				firstCall = true;
 				return new Result<IVerrechenbar>(
 					Result.SEVERITY.WARNING, KOMBINATION, "Für die Zuschlagsleistung "
 						+ code.getCode() + " konnte keine passende Hauptleistung gefunden werden.",
@@ -1006,6 +1150,7 @@ public class TarmedOptifier implements IOptifier {
 		Result<IVerrechenbar> limitResult = checkLimitations(kons, tc, newVerrechnet);
 		if (!limitResult.isOK()) {
 			decrementOrDelete(newVerrechnet);
+			firstCall = true;
 			return limitResult;
 		}
 		
@@ -1174,6 +1319,7 @@ public class TarmedOptifier implements IOptifier {
 				break;
 			
 			}
+			firstCall = true;
 			return new Result<IVerrechenbar>(Result.SEVERITY.OK, PREISAENDERUNG, "Preis", null, //$NON-NLS-1$
 				false);
 		}
@@ -1201,9 +1347,61 @@ public class TarmedOptifier implements IOptifier {
 		})) {
 			add(getKonsVerrechenbar("00.2590", kons), kons);
 		}
+		
+		// *** alles ist aktuell mit Ausnahme der %-Zuschläge - wenn %-Zuschlag, dann berechnen und setzen
+		Hashtable<String, String> extChildren = tc.loadExtension();
+		if (TarmedOptifierLists.PROZENTZUSCHLAEGEARRAYLIST.contains(tcid)) {
+			Mandant currMandant = kons.getMandant();
+			String bezug = newVerrechnet.getDetail("Bezug");
+			IVerrechenbar bezugsVerrechenbar = TarmedLeistung.getFromCode(bezug, date, law);
+			TarmedLeistung tlBezugsVerrechenbar = (TarmedLeistung) bezugsVerrechenbar;
+			int al = (tlBezugsVerrechenbar.getAL(currMandant) * 1/*bezugsVerrechenbar.getZahl()*/);
+			int tl = tlBezugsVerrechenbar.getTL();
+			double alScaling = getALScaling(currMandant, tc);
+			double tlScaling =
+				PersistentObject.checkZeroDouble(ext.get(TarmedLeistung.EXT_FLD_TP_AL));
+			newVerrechnet.setDetail(AL, Double.toString(al));
+			newVerrechnet.setDetail(TL, Double.toString(tl));
+			newVerrechnet.setTP(al + tl);
+			newVerrechnet.setPrimaryScaleFactor(alScaling);
+		}
+		
+		// *** update Technische Leistung OP if some position with OP-Sparte is added
+		//		if (!TarmedOptifierLists.ALLOPSPARTEN.contains(sparte)) {
+		//			if (!tcid.equalsIgnoreCase("35.0020"))
+		updateTLOP(kons);
+		//		}
+		
 		// +++++ END
+		firstCall = true;
 		return new Result<IVerrechenbar>(null);
 	}
+	
+	// +++++ START
+	/**
+	 * Get the AL scaling value to be used when billing this {@link TarmedLeistung} for the provided
+	 * {@link Mandant}.
+	 * 
+	 * @param mandant
+	 * @return
+	 */
+	public double getALScaling(Mandant mandant, TarmedLeistung tc){
+		Hashtable<String, String> ext = tc.loadExtension();
+		//double scaling = 100;
+		double scaling = PersistentObject.checkZeroDouble(ext.get("F_AL"));
+		if (mandant != null) {
+			MandantType type = TarmedLeistung.getMandantType(mandant);
+			if (type == MandantType.PRACTITIONER) {
+				double alScaling =
+					PersistentObject.checkZeroDouble(ext.get(TarmedLeistung.EXT_FLD_F_AL_R));
+				if (alScaling > 0.1) { // +++++ ???
+					scaling = alScaling;
+				}
+			}
+		}
+		return scaling;
+	}
+	// +++++ END
 	
 	private void decrementOrDelete(Verrechnet verrechnet){
 		int zahl = verrechnet.getZahl();
