@@ -44,7 +44,7 @@ public class BlockImporter {
 			servicesStm = cacheDb.getStatement();
 			ResultSet res =
 				servicesStm.query(String.format("SELECT DISTINCT BLOCK FROM %sLEISTUNG_BLOECKE", //$NON-NLS-1$
-				TarmedReferenceDataImporter.ImportPrefix));
+					TarmedReferenceDataImporter.ImportPrefix));
 			while (res.next()) {
 				String blockName = res.getString("BLOCK");
 				
@@ -71,6 +71,7 @@ public class BlockImporter {
 	 */
 	private void importKumulations(String blockName) throws SQLException{
 		Stm subStm = cacheDb.getStatement();
+		System.out.println("blockName: " + blockName);
 		try {
 			try (ResultSet res = subStm.query(String.format(
 				"SELECT * FROM %sLEISTUNG_KUMULATION WHERE LNR_MASTER=%s AND ART_MASTER='B'",

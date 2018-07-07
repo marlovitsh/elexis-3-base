@@ -73,6 +73,7 @@ public class DocboxView extends ViewPart implements ISaveablePart2 {
 	
 	public void setHospitalReferral(){
 		if (CoreHub.actUser != null && UserDocboxPreferences.hasValidDocboxCredentials()) {
+			String str = getDoboxLoginUrl() + getSSOLoginParams("HospitalApplicationsOverview");
 			browser.setUrl(getDoboxLoginUrl() + getSSOLoginParams("HospitalApplicationsOverview"));
 		}
 	}

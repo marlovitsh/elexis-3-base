@@ -34,9 +34,9 @@ public class TarmedOptifierTest {
 	private static Patient patGrissemann, patStermann, patOneYear, patBelow75;
 	private static Konsultation konsGriss, konsSter, konsOneYear, konsBelow75;
 	private static TarmedLeistung tlBaseFirst5Min, tlBaseXRay, tlBaseRadiologyHospital,
-			tlUltrasound, tlAgeTo1Month, tlAgeTo7Years, tlAgeFrom7Years, tlGroupLimit1,
-			tlGroupLimit2, tlAlZero;
-	
+			tlUltrasound, tlAgeTo1Month, tlAgeTo7Years, tlAgeFrom7Years,
+			tlGroupLimit1, tlGroupLimit2, tlAlZero;
+			
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception{
 		optifier = new TarmedOptifier();
@@ -73,7 +73,7 @@ public class TarmedOptifierTest {
 		konsGriss = new Konsultation(fallGriss);
 		resetKons(konsGriss);
 		
-		// Patient Stermann with case and consultation
+		//Patient Stermann with case and consultation
 		patStermann = new Patient("Stermann", "Dirk", "07.12.1965", Patient.MALE);
 		Fall fallSter = patStermann.neuerFall("Testfall Stermann", Fall.getDefaultCaseReason(),
 			Fall.getDefaultCaseLaw());
@@ -81,7 +81,7 @@ public class TarmedOptifierTest {
 		konsSter = new Konsultation(fallSter);
 		resetKons(konsSter);
 		
-		// Patient OneYear with case and consultation
+		//Patient OneYear with case and consultation
 		String dob = LocalDate.now().minusYears(1).minusDays(1)
 			.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
 		patOneYear = new Patient("One", "Year", dob, Patient.MALE);
@@ -91,7 +91,7 @@ public class TarmedOptifierTest {
 		konsOneYear = new Konsultation(fallOneYear);
 		resetKons(konsOneYear);
 		
-		// Patient below75 with case and consultation
+		//Patient below75 with case and consultation
 		dob = LocalDate.now().minusYears(74).minusDays(350)
 			.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
 		patBelow75 = new Patient("One", "Year", dob, Patient.MALE);
@@ -275,13 +275,11 @@ public class TarmedOptifierTest {
 	public void testBelow75(){
 		TarmedLeistung tl =
 			(TarmedLeistung) TarmedLeistung.getFromCode("00.0020", new TimeTool(), null);
-		// add age restriction to 75 years with 0 tolerance, for the test, like in
-		// tarmed 1.09
+		// add age restriction to 75 years with 0 tolerance, for the test, like in tarmed 1.09
 		Hashtable<String, String> ext = tl.loadExtension();
 		String origAgeLimits = ext.get(TarmedLeistung.EXT_FLD_SERVICE_AGE);
-		ext.put(TarmedLeistung.EXT_FLD_SERVICE_AGE,
-			origAgeLimits + (origAgeLimits.isEmpty() ? "-1|0|75|0|26[2006-04-01|2199-12-31]"
-					: ", -1|0|75|0|26[2006-04-01|2199-12-31]"));
+		ext.put(TarmedLeistung.EXT_FLD_SERVICE_AGE, origAgeLimits + (origAgeLimits.isEmpty()
+				? "-1|0|75|0|26[2006-04-01|2199-12-31]" : ", -1|0|75|0|26[2006-04-01|2199-12-31]"));
 		tl.setExtension(ext);
 		
 		Result<IVerrechenbar> result = optifier.add(tl, konsBelow75);
@@ -505,22 +503,6 @@ public class TarmedOptifierTest {
 		resetKons(konsGriss);
 	}
 	
-	@Test
-	public void testKumulationSide(){
-		clearKons(konsGriss);
-		
-		Result<IVerrechenbar> result = optifier.add(
-			(TarmedLeistung) TarmedLeistung.getFromCode("20.0330", new TimeTool(), null),
-			konsGriss);
-		assertTrue(result.isOK());
-		result = optifier.add(
-			(TarmedLeistung) TarmedLeistung.getFromCode("20.0330", new TimeTool(), null),
-			konsGriss);
-		assertFalse(result.isOK());
-		
-		clearKons(konsGriss);
-	}
-	
 	private int getLeistungAmount(String code, Konsultation kons){
 		int ret = 0;
 		for (Verrechnet leistung : kons.getLeistungen()) {
@@ -571,7 +553,7 @@ public class TarmedOptifierTest {
 		MultiplikatorList multis =
 			new MultiplikatorList("VK_PREISE", kons.getFall().getAbrechnungsSystem());
 		multis.removeMultiplikator(new TimeTool(yesterday), "0.83");
-		
+
 	}
 	
 	private static void clearKons(Konsultation kons){

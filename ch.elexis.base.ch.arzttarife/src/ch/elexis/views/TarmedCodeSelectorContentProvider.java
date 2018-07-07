@@ -2,6 +2,7 @@ package ch.elexis.views;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
@@ -18,10 +19,17 @@ import org.eclipse.jface.viewers.StructuredViewer;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.widgets.Display;
 
+import ch.elexis.core.data.events.ElexisEventDispatcher;
 import ch.elexis.core.ui.util.viewers.CommonViewer;
 import ch.elexis.core.ui.util.viewers.ViewerConfigurer.ICommonViewerContentProvider;
+import ch.elexis.data.Konsultation;
+import ch.elexis.data.Mandant;
 import ch.elexis.data.Query;
 import ch.elexis.data.TarmedLeistung;
+import ch.elexis.data.TarmedOptifier;
+import ch.rgw.tools.JdbcLink;
+import ch.rgw.tools.StringTool;
+import ch.rgw.tools.TimeTool;
 
 public class TarmedCodeSelectorContentProvider
 		implements ICommonViewerContentProvider, ITreeContentProvider {
@@ -44,13 +52,13 @@ public class TarmedCodeSelectorContentProvider
 	public TarmedCodeSelectorContentProvider(CommonViewer commonViewer){
 		this.commonViewer = commonViewer;
 		
-		childrenQuery =
-			new Query<>(TarmedLeistung.class, null, null, TarmedLeistung.TABLENAME, new String[] {
+		childrenQuery = new Query<>(TarmedLeistung.class, null, null, TarmedLeistung.TABLENAME,
+			new String[] {
 				TarmedLeistung.FLD_GUELTIG_VON, TarmedLeistung.FLD_GUELTIG_BIS,
 				TarmedLeistung.FLD_LAW
 			});
-		leafsQuery =
-			new Query<>(TarmedLeistung.class, null, null, TarmedLeistung.TABLENAME, new String[] {
+		leafsQuery = new Query<>(TarmedLeistung.class, null, null, TarmedLeistung.TABLENAME,
+			new String[] {
 				TarmedLeistung.FLD_GUELTIG_VON, TarmedLeistung.FLD_GUELTIG_BIS,
 				TarmedLeistung.FLD_LAW
 			});
@@ -119,12 +127,10 @@ public class TarmedCodeSelectorContentProvider
 	}
 	
 	@Override
-	public void selected(){
-	}
+	public void selected(){}
 	
 	@Override
-	public void init(){
-	}
+	public void init(){}
 	
 	@Override
 	public void startListening(){
@@ -179,8 +185,32 @@ public class TarmedCodeSelectorContentProvider
 			if (!isFiltered) {
 				childrenQuery.clear();
 				childrenQuery.add(TarmedLeistung.FLD_PARENT, Query.EQUALS, parentLeistung.getId());
+				// +++++ START minutes
+				Konsultation kons =
+					(Konsultation) ElexisEventDispatcher.getSelected(Konsultation.class);
+				boolean isAfter2018 = new TimeTool(kons.getDatum()).get(Calendar.YEAR) >= 2018;
+				TarmedOptifier.doStripMinuteItemsFromTree = true;
+				if (TarmedOptifier.doStripMinuteItemsFromTree && isAfter2018) {
+					// 00.0010, 00.0020, 00.0025, 00.0030 -> "einfach Konsultation, 5 Min"
+					// +++++ ACHTUNG: SQL
+					for (int j = 0; j < TarmedOptifierLists.codeMapListArrays.length; j++) {
+						String[][] codeMap = (String[][]) TarmedOptifierLists.codeMapListArrays[j];
+						for (int i = 0; i < codeMap.length; i++) {
+							String[] part = codeMap[i];
+							String joined = ",XXX" + StringTool.join(part, ",") + ",";
+							childrenQuery.addToken(JdbcLink.wrap(joined) + " NOT " + Query.LIKE
+								+ " (" + JdbcLink.wrap("%,") + " || " + TarmedLeistung.FLD_CODE
+								+ " || " + JdbcLink.wrap(",%") + ")");
+						}
+					}
+				}
+				// ***
 				childrenQuery.orderBy(false, TarmedLeistung.FLD_CODE);
-				return childrenQuery.execute().toArray();
+				Object[] res = childrenQuery.execute().toArray();
+				return res;
+				// +++++ END minutes
+				//				childrenQuery.orderBy(false, TarmedLeistung.FLD_CODE);
+				//				return childrenQuery.execute().toArray();
 			} else {
 				if (subChaptersHaveChildren(parentLeistung)) {
 					return getFilteredChapterChildren(parentLeistung).toArray();
