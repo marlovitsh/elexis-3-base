@@ -15,11 +15,9 @@
    <license url="http://www.example.com/license">
       [Enter License Description here.]
    </license>
-
    <requires>
       <import feature="ch.elexis.agenda.feature" version="3.2.0.qualifier"/>
    </requires>
-
    <plugin
          id="at.medevit.elexis.agenda.ui"
          download-size="0"

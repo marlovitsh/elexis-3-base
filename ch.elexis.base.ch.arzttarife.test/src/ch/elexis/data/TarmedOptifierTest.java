@@ -39,7 +39,7 @@ public class TarmedOptifierTest {
 	private static Konsultation konsGriss, konsSter, konsOneYear, konsBelow75;
 	private static TarmedLeistung tlBaseFirst5Min, tlBaseXRay, tlBaseRadiologyHospital,
 			tlUltrasound, tlAgeTo1Month, tlAgeTo7Years, tlAgeFrom7Years,
-			tlGroupLimit1, tlGroupLimit2;
+			tlGroupLimit1, tlGroupLimit2, tlAlZero;
 			
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception{

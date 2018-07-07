@@ -36,6 +36,7 @@ import ch.elexis.core.ui.data.UiVerrechenbarAdapter;
 import ch.elexis.data.TarmedKumulation.TarmedKumulationType;
 import ch.elexis.data.TarmedLimitation.LimitationUnit;
 import ch.elexis.views.TarmedDetailDialog;
+import ch.elexis.views.TarmedOptifierLists;
 import ch.rgw.tools.IFilter;
 import ch.rgw.tools.JdbcLink;
 import ch.rgw.tools.JdbcLink.Stm;
@@ -238,8 +239,39 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 		if (vals[0].isEmpty()) {
 			vals[0] = getId();
 		}
-		return vals[0] + " " + vals[1]
+		// +++++ START minutes
+		String spacer = " ";
+		if (TarmedOptifier.doStripMinuteItemsFromTree) {
+			spacer = "  ";
+			for (int j = 0; j < TarmedOptifierLists.codeMapListArrays.length; j++) {
+				String[][] codeMap = (String[][]) TarmedOptifierLists.codeMapListArrays[j];
+				for (int i = 0; i < codeMap.length; i++) {
+					String code = vals[0];
+					String[] part = codeMap[i];
+					String joined = "," + StringTool.join(part, ",") + ",";
+					if (joined.contains("," + code + ",")) {
+						vals[0] = vals[0];
+						// vals[1] = part[3];
+						spacer = "* ";
+						break;
+					}
+				}
+			}
+			// *** replace +++++
+			for (int ii = 0; ii < TarmedOptifierLists.itemReplacements5MinuteCodes.length; ii++)
+				vals[1] = vals[1].replace(
+					(CharSequence) TarmedOptifierLists.itemReplacements5MinuteCodes[ii][0],
+					(CharSequence) TarmedOptifierLists.itemReplacements5MinuteCodes[ii][1]);
+			for (int ii = 0; ii < TarmedOptifierLists.itemReplacementsAgeConnections.length; ii++)
+				vals[1] = vals[1].replace(
+					(CharSequence) TarmedOptifierLists.itemReplacementsAgeConnections[ii][0],
+					(CharSequence) TarmedOptifierLists.itemReplacementsAgeConnections[ii][1]);
+		}
+		return vals[0] + spacer + vals[1]
 			+ ((vals[2] != null && !vals[2].isEmpty()) ? " (" + vals[2] + ")" : "");
+		// +++++ END minutes
+		//		return vals[0] + " " + vals[1]
+		//			+ ((vals[2] != null && !vals[2].isEmpty()) ? " (" + vals[2] + ")" : "");
 	}
 	
 	@Override
@@ -1133,7 +1165,7 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 	private void fix9533(List<TarmedLimitation> ret){
 		boolean sessionfound = false;
 		for (TarmedLimitation tarmedLimitation : ret) {
-			if(tarmedLimitation.getLimitationUnit() == LimitationUnit.SESSION) {
+			if (tarmedLimitation.getLimitationUnit() == LimitationUnit.SESSION) {
 				sessionfound = true;
 				break;
 			}
