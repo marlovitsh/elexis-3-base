@@ -15,3 +15,4 @@ Require-Bundle: org.eclipse.ui,
  ch.elexis.core.ui.icons;bundle-version="3.0.0",
  org.jdom;bundle-version="1.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Export-Package: ch.elexis.notes

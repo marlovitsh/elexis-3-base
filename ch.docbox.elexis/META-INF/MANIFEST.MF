@@ -23,5 +23,6 @@ Bundle-Activator: ch.docbox.elexis.Activator
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: ch.docbox.cdach,
  ch.docbox.elexis,
+ ch.docbox.model,
  ch.docbox.ws.cdachservices,
  ch.swissmedicalsuite

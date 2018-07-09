@@ -14,3 +14,4 @@ Require-Bundle: ch.rgw.utility;bundle-version="3.0.0",
  ch.elexis.core.data,
  ch.elexis.core.ui
 Bundle-Localization: plugin
+Export-Package: ch.elexis.stickynotes.data
