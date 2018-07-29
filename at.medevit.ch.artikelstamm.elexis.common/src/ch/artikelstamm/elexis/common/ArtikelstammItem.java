@@ -472,7 +472,7 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	@Override
 	public int getPreis(TimeTool dat, IFall fall){
 		double vkPreis = checkZeroDouble(getVKPreis().getCentsAsString());
-		double pkgSize = checkZeroDouble(get(FLD_PKG_SIZE));
+		double pkgSize = Math.abs(checkZeroDouble(get(FLD_PKG_SIZE)));
 		double vkUnits = checkZeroDouble(get(VERKAUFSEINHEIT));
 		if ((pkgSize > ZERO) && (vkUnits > ZERO) && (pkgSize != vkUnits)) {
 			return (int) Math.round(vkUnits * (vkPreis / pkgSize));
@@ -874,6 +874,7 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	 *            the European Article Number or GTIN
 	 * @return the ArtikelstammItem that fits the provided EAN/GTIN or <code>null</code> if none or
 	 *         multiple found
+	 * @since 3.4 black-boxed articles are not considered.
 	 */
 	public static @Nullable ArtikelstammItem findByEANorGTIN(@NonNull String ean){
 		Query<ArtikelstammItem> qre = new Query<ArtikelstammItem>(ArtikelstammItem.class);
