@@ -626,7 +626,7 @@ public class TarmedOptifier implements IOptifier {
 		// *** age group "redirects" - change to correct age group, uses TarmedOptifierLists.ageGroupLists
 		if (bOptify) {
 			boolean skip = TarmedOptifierLists.skipCodesArray.contains(tcid);
-			doOptify5MinuteChunks = true;
+			//doOptify5MinuteChunks = true;
 			if (doOptify5MinuteChunks && isKonsAfter2018) {
 				if (!skip) {
 					// *** test if in array TarmedOptifierLists.ageGroupLists
