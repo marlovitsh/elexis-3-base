@@ -636,9 +636,13 @@ public class TarmedOptifier implements IOptifier {
 						String joinedAgeMap = "," + StringTool.join(ageMap, ",") + ",";
 						if (joinedAgeMap.contains("," + tcid + ",")) {
 							// ***  test if current kons is for < 6 years or > 75 years
-							
 							// *** change to correct code for age
 							String newCode = tcid;
+							// +++++ UVG START
+							if (law.equalsIgnoreCase("UVG")) {
+								newCode = ageMap[0];
+							} else 
+							// +++++ UVG END
 							if (!isAgeOk(kons, ageMap[0])) {
 								newCode = ageMap[1]; // *** children and older
 							} else {
