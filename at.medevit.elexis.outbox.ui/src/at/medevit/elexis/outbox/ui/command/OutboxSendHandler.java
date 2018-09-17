@@ -34,6 +34,7 @@ import at.medevit.elexis.outbox.model.OutboxElement;
 import at.medevit.elexis.outbox.ui.OutboxServiceComponent;
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.data.Patient;
+import ch.marlovits.utils.PdfUtils;
 
 public class OutboxSendHandler extends AbstractHandler implements IHandler {
 	
@@ -81,6 +82,14 @@ public class OutboxSendHandler extends AbstractHandler implements IHandler {
 				Optional<File> tmpFile = createTempFile((OutboxElement) iOutboxElement);
 				if (tmpFile.isPresent()) {
 					File file = tmpFile.get();
+					// +++++ START SEND AS PDF 
+					if (tmpFile.isPresent()) {
+						File tmp2 = PdfUtils.convertToPdf(tmpFile.get());
+						if (tmp2 != null) {
+							file = tmp2;
+						}
+					}
+					// +++++ END SEND AS PDF
 					attachments.add(file);
 				}
 			}

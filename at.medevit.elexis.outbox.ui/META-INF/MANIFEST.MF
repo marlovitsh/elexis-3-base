@@ -6,6 +6,7 @@ Bundle-Version: 3.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: ch.elexis.core.documents,
  ch.elexis.core.model,
+ ch.marlovits.utils,
  ch.rgw.io,
  org.apache.commons.io;version="2.4.0",
  org.slf4j
