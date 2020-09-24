@@ -472,7 +472,11 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	@Override
 	public int getPreis(TimeTool dat, IFall fall){
 		double vkPreis = checkZeroDouble(getVKPreis().getCentsAsString());
+		// +++++ START BUG FIX package size ArtikelstammItem
 		double pkgSize = checkZeroDouble(get(FLD_PKG_SIZE));
+		// WAS:
+		// double pkgSize = Math.abs(checkZeroDouble(get(FLD_PKG_SIZE)));
+		// +++++ END BUG FIX package size ArtikelstammItem
 		double vkUnits = checkZeroDouble(get(VERKAUFSEINHEIT));
 		if ((pkgSize > ZERO) && (vkUnits > ZERO) && (pkgSize != vkUnits)) {
 			return (int) Math.round(vkUnits * (vkPreis / pkgSize));
